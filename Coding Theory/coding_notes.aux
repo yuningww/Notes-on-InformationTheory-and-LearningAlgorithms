@@ -1,0 +1,47 @@
+\relax 
+\@writefile{toc}{\contentsline {section}{\numberline {1}Binary Linear Block Codes}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Generator matrix}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Parity check matrix}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Low-Density Parity-Check Codes}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Representation of LDPC Codes}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Tanner graph of a (10,5) linear block code with $r = 4$, $g = 2$ (i.e. the degree of each VN is 2 and the degree of each CN is 4)}}{4}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:tanner-demo}{{1}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Message Passing and the Turbo Principle}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces A depiction of the trubo principle for concatenated coding schemes.(a) Extrinsic information $I_{X \to Y}$ from decoder X to decoder Y. (b) Extrinsic information $I_{Y \to X}$ from decoder Y to decoder X. (c) A compact symmetric combination of (a) and (b).}}{6}{}\protected@file@percent }
+\newlabel{fig:turbo}{{2}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Sum-Prudct Algorithm}{7}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Graphical representation of an LDPC code as a concatenation of SPC and REP codes. $\pi $ represents an interleaver.}}{7}{}\protected@file@percent }
+\newlabel{fig:LDPC-demo}{{3}{7}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}VN: Repetition Code MAP Decoder and APP Processor}{8}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces A VN decoder (REP decoder). VN $j$ receives LLR information from the channel and from all of its neighbors, excluding message $L_{i \to j}$ from CN $i$, from which VN $j$ composes message $L_{j \to i}$ that is sent to CN $i$}}{8}{}\protected@file@percent }
+\newlabel{fig:VN-demo}{{4}{8}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}CN: Single-Parity-Check Code MAP Decoder and APP Processor}{9}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces A CN decoder (SPC decoder). CN $i$ receives LLR information from all of its neighbors, excluding message $L_{j \to i}$ from VN $j$, from which CN $i$ composes message $L_{i \to j}$ that is sent to VN $j$}}{9}{}\protected@file@percent }
+\newlabel{fig:CN-demo}{{5}{9}{}{}{}}
+\newlabel{lem:gallager-even-odd}{{1}{9}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.3}The Gallager SPA Decoder}{11}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces The Gallager Sum-Product Algorithm}}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.4}The Min-Sum Decoder}{13}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces A plot of $\phi (x)$}}{13}{}\protected@file@percent }
+\newlabel{fig:phi}{{6}{13}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces An example of min-sum decoding on the BEC using the (3,2) regular LDPC code. Note that,for BEC, $\phi \left (\DOTSB \sum@ \slimits@ _{j'} \phi (\beta _{j'i})\right )$ is 0 or $\infty $ exactly when $min_{j'} \beta _{j'i}$ is 0 or $\infty $, respectively. Note also that this is equivalent to the iterative erasure filling algorithm.}}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Decoding Algoithms for the BEC and the BSC}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}Iterative Erasure Filling for the BEC}{15}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Iterative Erasure Decoding Algorithm}}{15}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}ML Decoder for the BEC}{15}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.3}Gallager's Algorithm A and B for the BSC}{16}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.4}The Bit-Flipping Algorithm for the BSC}{17}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces The Bit-Flipping Algorithm}}{17}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Generalized LDPC Codes}{18}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Code Ensemble Behaviour}{19}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \relax }}{19}{}\protected@file@percent }
+\newlabel{fig: LDPCBehaviour}{{8}{19}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Example of a (4, 2) trapping set. Even-degree check nodes are connected to an even number of variable nodes within $\mathcal  {T}$, and their LLR update equations are symmetric with respect to the incorrect solution --- wrong incoming LLRs combine to produce outgoing messages consistent with the error, forming self-reinforcing cycles within $\mathcal  {T}$ that create a \textbf  {stable fixed point at an incorrect solution}. VNs outside $\mathcal  {T}$ connected with odd-degree check nodes let them produce corrective messages pushing toward the correct solution, but with only $b$ such nodes against $a$ erroneous variable nodes, their signals are overwhelmed by the stronger reinforcing messages from the even-degree CN cycles.}}{20}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Density Evolution}{21}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Local topology of the graph of a regular (3,4)-LDPC code. White nodes represent VNs; black nodes represent CNs; each edge corresponds to a 1 in \textbf  {H}.}}{21}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.7.1}General Idea}{22}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.7.2}Density Evolution for Regular LDPC Codes in the BEC}{22}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.7.3}Density Evolution for Regular LDPC Codes}{23}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {4}{\ignorespaces Density Evolution for Regular LDPC Codes}}{24}{}\protected@file@percent }
+\gdef \@abspage@last{24}
