@@ -52,7 +52,7 @@
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.5\linewidth]{BasicModel.jpg}
+  \includegraphics[width=0.5\linewidth]{images/BasicModel.jpg}
   \caption{Communication system model}
 \end{figure}
 In the digital communication system model, the source message $\mathbf{s}$ is encoded by an encoder into transmitted message $\mathbf{t}$, adding redundancy to the original message in some way. The channel is noisy, so it adds noise $\mathbf{n}$ to $\mathbf{t}$, yielding a received message $\mathbf{r}$. The decoder used the known redundancy introduced by the encoder to deduce the source message and the noise added.
@@ -197,12 +197,12 @@ Then introduce the Bayes' theorem:
 
 \begin{figure}[H]
     \begin{subfigure}{0.45\textwidth}
-    \includegraphics[width=0.9\linewidth]{DistributionInference.jpg}
+    \includegraphics[width=0.9\linewidth]{images/DistributionInference.jpg}
     \caption{$P(x\mid \lambda)$ as a function of $x$ and $\lambda$. If $x$ is fixed, then it is the likelihood function of $\lambda$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.45\textwidth}
-    \includegraphics[width=0.9\linewidth]{SampleInference.jpg}
+    \includegraphics[width=0.9\linewidth]{images/SampleInference.jpg}
     \caption{the likelihood function in the case of $P(\{x\}=\{1.5, 2, 3, 4, 5, 12\}\mid \lambda)$ as a function of $\lambda$, which is the product of 6 likelihood functions for every element in $\{x\}$.}
     \end{subfigure}
 \end{figure}
@@ -322,7 +322,7 @@ $f$ are known.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.5\linewidth]{MutualInfo.png}
+  \includegraphics[width=0.5\linewidth]{images/MutualInfo.png}
   \caption{Relationship between joint information, marginal entropy, conditional entropy and mutual entropy}
 \end{figure}
 
@@ -388,12 +388,12 @@ Measures of the information content of an outcome $x=a_i$ from such an ensemble 
 \end{enumerate}
 \begin{figure}[H]
     \begin{subfigure}{0.45\textwidth}
-    \includegraphics[width=0.9\linewidth]{h_p.jpg}
+    \includegraphics[width=0.9\linewidth]{images/h_p.jpg}
     \caption{the Shannon information content of an outcome with probability p, as a function of p. The less probable an outcome is, the greater its Shannon information content.}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.45\textwidth}
-    \includegraphics[width=0.9\linewidth]{H2_p.jpg}
+    \includegraphics[width=0.9\linewidth]{images/H2_p.jpg}
     \caption{the binary entropy function, $H_2(X)=p \log_2\frac{1}{p} + (1-p)\log_2\frac{1}{1-p}$, which is the entropy of the ensemble $X$ whose alphabet and probability distribution are $\mathcal{A}_X=\{a,b\},\,\mathcal{P}_X=\{p,(1-p)\}$.}
     \end{subfigure}
 \end{figure}
@@ -486,7 +486,7 @@ Notice that if $H(X) < H_0(X)$ then $2^{NH(X)}$ is a tiny fraction of the number
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.9\linewidth]{tpical_set.jpg}
+  \includegraphics[width=0.9\linewidth]{images/typical_set.jpg}
   \caption{Schematic diagram showing all strings in the ensemble $X^N$ ranked by their probability, and the typical set $T_{N\beta}$}
 \end{figure}
 
@@ -495,7 +495,7 @@ Notice that if $H(X) < H_0(X)$ then $2^{NH(X)}$ is a tiny fraction of the number
   \item The source coding theorem has two parts, $\frac{1}{N}H_\delta(X^N) < H+\epsilon$, and $\frac{1}{N}H_\delta(X^N) > H-\epsilon$. Part 1 tells that even if the probability of error $\delta$ is extremely small, the number of bits per symbol $\frac{1}{N}H_\delta(X^N)$ needed to specify a long $N$-symbol string $\mathbf{x}$ with vanishingly small error probability does not have to exceed $H+\epsilon$ bits. We need to have only a tiny tolerance for error, and the number of bits required drops significantly from $H_0(X)$ to $(H+\epsilon)$. Part 2 tells us that even if $\delta$ is very close to 1, so that errors are made most of the time, the average number of bits per symbol needed to specify $\mathbf{x}$ must still be at least $H-\epsilon$ bits. These two extremes tell us that \textbf{regardless of our specific allowance for error, the number of bits per symbol needed to specify $\mathbf{x}$ is $H$ bits; no more and no less}.
   \begin{figure}[H]
   \centering
-  \includegraphics[width=0.4\linewidth]{sourcecoding.jpg}
+  \includegraphics[width=0.4\linewidth]{images/sourcecoding.jpg}
   \caption{Schematic illustration of the two parts of the theorem. Given any $\delta$ and $\epsilon$, we show that for large enough $N$, $\frac{1}{N}H_\delta(X^N)$ lies (1) below the line $H + \epsilon$ and (2) above the line $H - \epsilon$.}
   \end{figure}
   \item The best choice of subset for block compression is (by definition) $S_\delta$, not a typical set. So why did we bother introducing the typical set? The answer is, we can count the typical set. We know that all its elements have ``almost identical'' probability ($2^{-NH}$), and we know the whole set has probability almost 1, so the typical set must have roughly $2^{NH}$ elements. Without the help of the typical set (which is very similar to $S_\delta$) it would have been hard to count how many elements there are in $S_\delta$.
@@ -505,7 +505,7 @@ Notice that if $H(X) < H_0(X)$ then $2^{NH(X)}$ is a tiny fraction of the number
 \section{The Channel Coding Theorem}
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.6\linewidth]{ChannelBigPicture.png}
+  \includegraphics[width=0.6\linewidth]{images/ChannelBigPicture.png}
   \caption{Overview of source coding and channel coding}
 \end{figure}
 
@@ -581,7 +581,7 @@ result is the first.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.5\linewidth]{NoisyChannelTheorem.png}
+  \includegraphics[width=0.5\linewidth]{images/NoisyChannelTheorem.png}
   \caption{Portion of the $R$, $p_b$ plane to be proved achievable (1,2) and not achievable (3)}
 \end{figure}
 
