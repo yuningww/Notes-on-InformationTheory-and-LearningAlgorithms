@@ -110,6 +110,57 @@ The orthogonal complement of $\mathcal{C}$, denoted $\mathcal{C}^\perp$ is defin
   the systematic parity check matrix is given by $H = \left[ -P^T \mid  I_{n-k} \right]$.
 \end{itemize}
 
+\subsection{Minimum distance of a code}
+The \textbf{Hamming distance} $d(\boldsymbol{x}, \boldsymbol{y})$ between two binary sequences $\boldsymbol{x}, \boldsymbol{y}$ of length $n$ is the number of positions in which $\boldsymbol{x}$ and $\boldsymbol{y}$ differ.
+
+Let $\mathcal{C}$ be a code with codewords $\{ \boldsymbol{c}_1, \cdots, \boldsymbol{c}_{M} \}$. Then the
+minimum distance $d_{\min}$ is the smallest Hamming distance
+between any pair of codewords. That is,
+\[
+d_{\min} = \min_{i \neq j} d(\boldsymbol{c}_i, \boldsymbol{c}_j)
+\]
+also, the Hamming distance between two codewords $\boldsymbol{u}, \boldsymbol{v}$ can expressed as
+\[
+d(\boldsymbol{u}, \boldsymbol{v}) = wt(\boldsymbol{u} + \boldsymbol{v})
+\]
+where $wt(\boldsymbol{c})$ is the Hamming weight of $\boldsymbol{c}$, i.e., the number of nonzero elements in $\boldsymbol{c}$. Thus,
+\[
+\begin{aligned}
+d_{\min} = \min_{i \neq j} d(\boldsymbol{c}_i, \boldsymbol{c}_j) &= \min_{i \neq j} wt(\boldsymbol{c}_i + \boldsymbol{c}_j) \\
+&= \min_{\boldsymbol{c}_k \neq \boldsymbol{0}} wt(\boldsymbol{c}_k) \quad \text{(since $\boldsymbol{c}_i + \boldsymbol{c}_j$ is also a codeword)}
+\end{aligned}
+\]
+the minimum distance of an LBC equals the minimum Hamming weight among the non-zero codewords.
+
+\subsection{Optimal decoding of a block code: ML decoding}
+For any channel described by $P_{Y \mid X}$ , if the input bits/messages
+corresponding to the codewords are equally likely, then the optimal
+decoder given the received length-$n$ sequence $\boldsymbol{y}$ is the
+maximum likelihood decoder given by
+\[
+\hat{\boldsymbol{x}} = \arg\max_{\boldsymbol{x} \in \mathcal{C}} P(\boldsymbol{y} \mid \boldsymbol{x})
+\]
+
+If the BSC probability $\epsilon < \frac{1}{2}$, then the codeword with smallest Hamming distance is the ML decoding
+\[
+\hat{\boldsymbol{x}} = \arg\min_{\boldsymbol{x} \in \mathcal{C}} d(\boldsymbol{y}, \boldsymbol{x})
+\]
+
+Draw spheres of radius $t$ centred on each codeword. Sphere centred at $\boldsymbol{c}_i$
+contains all the binary sequences $\boldsymbol{r}$ such that $d(\boldsymbol{c}_i, \boldsymbol{r}) \leq t$.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\linewidth]{images/mindis.png}
+  \caption{The big dots represent the codewords, the little ones are the other length-$n$ binary sequences}
+  \label{fig:ML-decoding}
+\end{figure}
+\noindent If fewer than $t$ errors occur, the received word $\boldsymbol{r}$ will lie within
+the radius-$t$ sphere of the transmitted codeword. Further, the spheres won't overlap if $2t < d_{\min}$, or
+$2t \leq d_{\min} - 1$.
+
+Therefore, \textbf{a block code with minimum distance $d_{\min}$ is guaranteed to correct any pattern of up to $\mathbf{\left\lfloor \frac{d_{\min} - 1}{2} \right\rfloor}$ errors}. It can recover up to $d_{\min} - 1$ erasures.
+
+
 \clearpage
 \section{Low-Density Parity-Check Codes}
 
