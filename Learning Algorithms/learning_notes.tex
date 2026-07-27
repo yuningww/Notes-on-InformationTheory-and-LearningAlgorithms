@@ -40,6 +40,87 @@
 \author{}
 \date{}
 \maketitle
+\clearpage
+\part{Mathematical Foundations}
+This part is not aiming to provide a general coverage of all the mathematical foundations, but rather to provide a quick reference for the mathematical concepts that are frequently used and worth noting.
+\section{Maximum Likelihood Estimation}
+The process of estimating model parameters $\boldsymbol{\theta}$ from data $\mathcal{D}$ is called \textbf{model fitting}, or training, and is at the heart of machine learning.
+The key optimization problem is,
+\[
+\hat{\boldsymbol{\theta}} = \operatorname*{argmax}_{\boldsymbol{\theta}} \mathcal{L}(\boldsymbol{\theta})
+\]
+where $\mathcal{L}(\boldsymbol{\theta})$ is some kind of loss function or objective function.
+
+The most common approach to parameter estimation is to pick the parameters that assign the highest
+probability to the training data, called \textbf{maximum likelihood estimation} or \textbf{MLE}.
+\[
+\hat{\boldsymbol{\theta}}_{mle} = \operatorname*{argmax}_{\boldsymbol{\theta}} p(\mathcal{D} \mid \boldsymbol{\theta})
+\]
+Often, we assume the training examples are independently sampled from the same distribution (\textbf{iid} assumption),
+\[
+p(\mathcal{D} \mid \boldsymbol{\theta}) = \prod_{n=1}^N p(\mathbf{y}_n \mid \mathbf{x}_n, \boldsymbol{\theta})
+\]
+working with log likelihood 
+\[
+\hat{\boldsymbol{\theta}}_{mle} = \operatorname*{argmax}_{\boldsymbol{\theta}} \log p(\mathcal{D} \mid \boldsymbol{\theta}) = \operatorname*{argmax}_{\boldsymbol{\theta}} \sum_{n=1}^N \log p(\mathbf{y}_n \mid \mathbf{x}_n, \boldsymbol{\theta})
+\]
+In some tasks, the optimization algorithm is designed to minimize the loss function, so equivalently,
+\[
+\hat{\boldsymbol{\theta}}_{mle} = \operatorname*{argmin}_{\boldsymbol{\theta}} \text{NLL}(\boldsymbol{\theta}) = \operatorname*{argmin}_{\boldsymbol{\theta}} - \sum_{n=1}^N \log p(\mathbf{y}_n \mid \mathbf{x}_n, \boldsymbol{\theta})
+\]
+In the special case of unsupervised learning, we have $\mathbf{x}_n = \emptyset$, so the MLE changes $p(\mathbf{y}_n \mid \mathbf{x}_n, \boldsymbol{\theta}) = p(\mathbf{y}_n \mid \boldsymbol{\theta})$
+
+\subsection*{Justification}
+To justify the use of the MLE is that the resulting predictive distribution $p(\boldsymbol{y}|\hat{\boldsymbol{\theta}}_{\text{mle}})$ is as close as possible to the \textbf{empirical distribution} of the data. The empirical distribution is defined by
+\[
+p_{\mathcal{D}}(\boldsymbol{x}, \boldsymbol{y}) = p_{\mathcal{D}}(\boldsymbol{y}|\boldsymbol{x}) p_{\mathcal{D}}(\boldsymbol{x}) = \frac{1}{N} \sum_{n=1}^{N} \delta(\boldsymbol{x} - \boldsymbol{x}_n) \delta(\boldsymbol{y} - \boldsymbol{y}_n)
+\]
+the empirical distribution is a series of delta functions at the observed training points.
+
+If we define $q(Y \mid \boldsymbol{x})$ denotes the model's predictive distribution, then the expected KL then becomes
+\[
+\begin{aligned}
+\mathbb{E}_{p_{\mathcal{D}}(\boldsymbol{x})} \left[ D_{\mathbb{KL}} \left( p_{\mathcal{D}}(Y|\boldsymbol{x}) \, \| \, q(Y|\boldsymbol{x}) \right) \right] &= \sum_{\boldsymbol{x}} p_{\mathcal{D}}(\boldsymbol{x}) \left[ \sum_{\boldsymbol{y}} p_{\mathcal{D}}(\boldsymbol{y}|\boldsymbol{x}) \log \frac{p_{\mathcal{D}}(\boldsymbol{y}|\boldsymbol{x})}{q(\boldsymbol{y}|\boldsymbol{x})} \right] \\
+&= \text{const} - \sum_{\boldsymbol{x}, \boldsymbol{y}} p_{\mathcal{D}}(\boldsymbol{x}, \boldsymbol{y}) \log q(\boldsymbol{y}|\boldsymbol{x}) \\
+&= \text{const} - \frac{1}{N} \sum_{n=1}^{N} \log p(\boldsymbol{y}_n | \boldsymbol{x}_n, \boldsymbol{\theta})
+\end{aligned}
+\]
+Minimizing the expected KL divergence is equivalent to minimizing the conditional NLL.
+
+\section{Mixture Models}
+To create more complex probability models is to take a convex combination of simple
+distributions. This is called a mixture model.
+\[
+p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} p(z=k|\boldsymbol{\theta}) p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k p(\boldsymbol{y}|z=k, \boldsymbol{\theta})
+\]
+$\pi_k$ is the mixture weight for component $k$, and $\sum_{k=1}^{K} \pi_k = 1$, and the \textbf{latent variable} $z \in \{1, \ldots, K\}$ which specifies which distribution to use for generating the output $\boldsymbol{y}$.
+
+A \textbf{Gaussian mixture models (GMM)} is a mixture model where each component is a Gaussian distribution,
+\[
+p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k \mathcal{N}(\boldsymbol{y}|\boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k)
+\]
+
+GMMs are often used for unsupervised clustering of real-valued data samples $\boldsymbol{y}_n \in \mathbb{R}^D$. 
+First, the parameters $\boldsymbol{\theta}$ of the GMM can be estimated using MLE, often with the Expectation-Maximization (EM) algorithm.
+\[
+\hat{\boldsymbol{\theta}} = \operatorname*{argmax}_{\boldsymbol{\theta}} \log p(\{\boldsymbol{y}_n : n = 1, \ldots, N\} \mid \boldsymbol{\theta})
+\]
+Then, we associate each data point $\boldsymbol{y}_n$ with a discrete latent variable $z_n \in \{1, \ldots, K\}$, which indicates which mixture component or cluster generated the data point. The posterior distribution over the latent variable is given by Bayes' rule:
+\[
+p(z_n=k|\boldsymbol{y}_n, \boldsymbol{\theta}) = \frac{p(\boldsymbol{y}_n|z_n=k, \boldsymbol{\theta}) p(z_n=k|\boldsymbol{\theta})}{\sum_{j=1}^{K} p(\boldsymbol{y}_n|z_n=j, \boldsymbol{\theta}) p(z_n=j|\boldsymbol{\theta})} 
+\]
+This quantity is known as the \textbf{responsibility} of cluster $k$ for data point $\boldsymbol{y}_n$. Then, we can compute the most probable cluster assignment as:
+\[
+\hat{z}_n = \operatorname*{argmax}_{k} p(z_n=k|\boldsymbol{y}_n, \boldsymbol{\theta})
+\]
+This forms the basis of the clustering alorithms like the K-means clustering.
+
+A \textbf{Bernoulli mixture model (BMM)} can be used for binary-valued data, where each mixture component has the following form:
+\[
+p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \prod_{d=1}^{D} \text{Ber}(y_d | \mu_{dk}) = \prod_{d=1}^{D} \mu_{dk}^{y_d} (1 - \mu_{dk})^{1-y_d}
+\]
+
+
 
 \clearpage
 \part{Linear Models and Neural Networks}
