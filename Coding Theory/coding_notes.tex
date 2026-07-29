@@ -132,6 +132,9 @@ d_{\min} = \min_{i \neq j} d(\boldsymbol{c}_i, \boldsymbol{c}_j) &= \min_{i \neq
 \]
 the minimum distance of an LBC equals the minimum Hamming weight among the non-zero codewords.
 
+Also, the minimum distance of an LBC code can be found by looking at its parity-check matrix $H$: the minimum distance $d_{\min}$ of the code $\mathcal{C}$ is
+the minimum number of columns of $H$ that are linearly dependent, i.e., that can be combined to give the zero vector.
+
 \subsection{Optimal decoding of a block code: ML decoding}
 For any channel described by $P_{Y \mid X}$ , if the input bits/messages
 corresponding to the codewords are equally likely, then the optimal
@@ -159,6 +162,27 @@ the radius-$t$ sphere of the transmitted codeword. Further, the spheres won't ov
 $2t \leq d_{\min} - 1$.
 
 Therefore, \textbf{a block code with minimum distance $d_{\min}$ is guaranteed to correct any pattern of up to $\mathbf{\left\lfloor \frac{d_{\min} - 1}{2} \right\rfloor}$ errors}. It can recover up to $d_{\min} - 1$ erasures.
+
+$d_{\min}$ gives the guaranteed error correction capability of a code, but the code may be able to correct many more error patterns.
+
+\subsection{Syndrome decoding}
+For any received $n$ bits string $\boldsymbol{r}$, a \textbf{syndrome vector} can be calculated as
+\[
+H \boldsymbol{r}^\top = \boldsymbol{s}
+\]
+where, in the context of $GF(2)$,
+$\boldsymbol{r} \in \mathbb{F}_2^{1 \times n}$, $\boldsymbol{s} \in \mathbb{F}_2^{1 \times (n-k)}$.
+
+By writing the received $\boldsymbol{r}$ in the form of $\boldsymbol{r} = \boldsymbol{c} + \boldsymbol{e}$, where $\boldsymbol{c}$ is a codewords and $\boldsymbol{e}$ is the error pattern introduced in the channel. Therefore,
+\[
+H \boldsymbol{r}^\top = H (\boldsymbol{c} + \boldsymbol{e})^\top = H \boldsymbol{e}^\top = \boldsymbol{s}
+\]
+Thus, utilizing this property, we can precompute the syndromes for every possible error patterns and store them into a lookup table.
+Then, for a received $\boldsymbol{r}'$ and its syndrome, we can find the corresponding error pattern $\boldsymbol{e}'$ from the lookup table, then, the decoding result is
+\[
+\boldsymbol{c}' = \boldsymbol{r}' - \boldsymbol{e}' = \boldsymbol{r}' + \boldsymbol{e}'
+\]
+where $+$ and $-$ are equivalent operation in $GF(2^q)$.
 
 
 \clearpage
@@ -376,6 +400,19 @@ L_{i \to j} = 2\tanh^{-1}\left(\prod_{j' \in N(i)-\{j\}} \tanh\left(\frac{1}{2}L
 }
 \]
 and transmits it to VN $j$. 
+\subsubsection{CN update equation generalized}
+The CN update equation can also be written in the form of "sum" as in the VN updates,
+\[
+\boxed{
+L_{i \to j} = \boxplus_{j' \in N(i) - {j}} \left\{ L_{j' \to i} \right\}
+}
+\]
+where the boxplus operation $\boxplus$ is defined as
+\[
+x \boxplus y = \max^* (0, x+y) - \max^*(x,y) \quad \text{where} \quad \max^*(x,y) = \ln (e^x + e^y)
+\]
+In GF(2), the special case can be shown to be $x \boxplus y = 2\tanh^{-1}(\tanh(x/2) \tanh(y/2))$.
+
 
 \subsubsection{The Gallager SPA Decoder}
 
