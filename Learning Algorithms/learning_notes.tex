@@ -87,39 +87,6 @@ If we define $q(Y \mid \boldsymbol{x})$ denotes the model's predictive distribut
 \]
 Minimizing the expected KL divergence is equivalent to minimizing the conditional NLL.
 
-\section{Mixture Models}
-To create more complex probability models is to take a convex combination of simple
-distributions. This is called a mixture model.
-\[
-p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} p(z=k|\boldsymbol{\theta}) p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k p(\boldsymbol{y}|z=k, \boldsymbol{\theta})
-\]
-$\pi_k$ is the mixture weight for component $k$, and $\sum_{k=1}^{K} \pi_k = 1$, and the \textbf{latent variable} $z \in \{1, \ldots, K\}$ which specifies which distribution to use for generating the output $\boldsymbol{y}$.
-
-A \textbf{Gaussian mixture models (GMM)} is a mixture model where each component is a Gaussian distribution,
-\[
-p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k \mathcal{N}(\boldsymbol{y}|\boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k)
-\]
-
-GMMs are often used for unsupervised clustering of real-valued data samples $\boldsymbol{y}_n \in \mathbb{R}^D$. 
-First, the parameters $\boldsymbol{\theta}$ of the GMM can be estimated using MLE, often with the Expectation-Maximization (EM) algorithm.
-\[
-\hat{\boldsymbol{\theta}} = \operatorname*{argmax}_{\boldsymbol{\theta}} \log p(\{\boldsymbol{y}_n : n = 1, \ldots, N\} \mid \boldsymbol{\theta})
-\]
-Then, we associate each data point $\boldsymbol{y}_n$ with a discrete latent variable $z_n \in \{1, \ldots, K\}$, which indicates which mixture component or cluster generated the data point. The posterior distribution over the latent variable is given by Bayes' rule:
-\[
-p(z_n=k|\boldsymbol{y}_n, \boldsymbol{\theta}) = \frac{p(\boldsymbol{y}_n|z_n=k, \boldsymbol{\theta}) p(z_n=k|\boldsymbol{\theta})}{\sum_{j=1}^{K} p(\boldsymbol{y}_n|z_n=j, \boldsymbol{\theta}) p(z_n=j|\boldsymbol{\theta})} 
-\]
-This quantity is known as the \textbf{responsibility} of cluster $k$ for data point $\boldsymbol{y}_n$. Then, we can compute the most probable cluster assignment as:
-\[
-\hat{z}_n = \operatorname*{argmax}_{k} p(z_n=k|\boldsymbol{y}_n, \boldsymbol{\theta})
-\]
-This forms the basis of the clustering alorithms like the K-means clustering.
-
-A \textbf{Bernoulli mixture model (BMM)} can be used for binary-valued data, where each mixture component has the following form:
-\[
-p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \prod_{d=1}^{D} \text{Ber}(y_d | \mu_{dk}) = \prod_{d=1}^{D} \mu_{dk}^{y_d} (1 - \mu_{dk})^{1-y_d}
-\]
-
 \section{Matrix Calculus}
 \subsection{Functions that map scalars to scalars}
 
@@ -208,31 +175,135 @@ A function $f: \mathbb{R}^{m \times n} \to \mathbb{R}$,
 Here are some useful identities:
 \[
 \frac{\partial}{\partial \mathbf{X}} (\boldsymbol{a}^\mathsf{T} \mathbf{X} \boldsymbol{b}) = \boldsymbol{a} \boldsymbol{b}^\mathsf{T}
-\]
-\[
+\, , \quad
 \frac{\partial}{\partial \mathbf{X}} (\boldsymbol{a}^\mathsf{T} \mathbf{X}^\mathsf{T} \boldsymbol{b}) = \boldsymbol{b} \boldsymbol{a}^\mathsf{T}
 \]
 \[
 \frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{A} \mathbf{X} \mathbf{B}) = \mathbf{A}^\mathsf{T} \mathbf{B}^\mathsf{T}
-\]
-\[
+\, , \quad
 \frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{X}^\mathsf{T} \mathbf{A}) = \mathbf{A}
 \]
 \[
 \frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{X}^{-1} \mathbf{A}) = -\mathbf{X}^{-\mathsf{T}} \mathbf{A}^\mathsf{T} \mathbf{X}^{-\mathsf{T}}
-\]
-\[
+\, , \quad
 \frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{X}^\mathsf{T} \mathbf{A} \mathbf{X}) = (\mathbf{A} + \mathbf{A}^\mathsf{T}) \mathbf{X}
 \]
 \[
 \frac{\partial}{\partial \mathbf{X}} \det(\mathbf{A} \mathbf{X} \mathbf{B}) = \det(\mathbf{A} \mathbf{X} \mathbf{B}) \mathbf{X}^{-\mathsf{T}}
-\]
-\[
+\, , \quad
 \frac{\partial}{\partial \mathbf{X}} \log(\det(\mathbf{X})) = \mathbf{X}^{-\mathsf{T}}
 \]
 
 \section{Bound Optimization}
+If the optimization goal is to maximize a function $\ell (\boldsymbol{\theta})$ wrt its parameters $\boldsymbol{\theta}$. 
+The idea of bound optimization is to construct a surrogate function $Q(\boldsymbol{\theta}; \boldsymbol{\theta}^{t})$ which is a tight lowerbound to $\ell (\boldsymbol{\theta})$ such that:
+\[
+Q(\boldsymbol{\theta}; \boldsymbol{\theta}^{t}) \leq \ell (\boldsymbol{\theta}) \quad \forall \boldsymbol{\theta}, \boldsymbol{\theta}^{t} \quad \text{and} \quad Q(\boldsymbol{\theta}^{t}; \boldsymbol{\theta}^{t}) = \ell (\boldsymbol{\theta}^{t})
+\]
+Then, perform the following iterative update:
+\[
+\boldsymbol{\theta}^{t+1} = \operatorname*{argmax}_{\boldsymbol{\theta}} Q(\boldsymbol{\theta}; \boldsymbol{\theta}^{t})
+\]
+which guarantees monotonic increase of the objective function $\ell (\boldsymbol{\theta})$:
+\[
+\ell (\boldsymbol{\theta}^{t+1}) \geq Q(\boldsymbol{\theta}^{t+1}; \boldsymbol{\theta}^{t}) \geq Q(\boldsymbol{\theta}^{t}; \boldsymbol{\theta}^{t}) = \ell (\boldsymbol{\theta}^{t})
+\]
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/boundoptimize.png}
+  \caption{The solid blue curve is the lower bound, evaluated at $\boldsymbol{\theta}^t$; this
+touches the objective function at $\boldsymbol{\theta}^t$. We then set $\boldsymbol{\theta}^{t+1}$ to the maximum of the lower bound (blue
+curve), and fit a new bound at that point (dotted green curve). The maximum of this new bound
+becomes $\boldsymbol{\theta}^{t+2}$, etc}
+\end{figure}
 
+\subsection{EM algorithm}
+\textbf{Expectation maximization (EM)} algorithm is a special case of bound optimization 
+designed to compute the MLE or MAP parameter estimates for probability models that have \textbf{missing data} and/or \textbf{hidden variables}.
+
+EM algorithm alternate between:
+\begin{itemize}
+    \item E-step: estimating the hidden variables $\boldsymbol{z}_n$
+    \item M-step: using the fully observed data $\boldsymbol{y}_n$ to compute the MLE
+\end{itemize}
+
+\subsubsection*{Lower bound: ELBO}
+The goal of EM is to maximize the log likelihood of the observed data:
+\[
+\ell(\boldsymbol{\theta}) = \sum_{n=1}^{N} \log p(\boldsymbol{y}_n \mid \boldsymbol{\theta}) = \sum_{n=1}^{N} \log \left[ \sum_{\boldsymbol{z}_n} p(\boldsymbol{y}_n, \boldsymbol{z}_n \mid \boldsymbol{\theta}) \right]
+\]
+which is hard to optimize since the log cannot be pushed inside the sum.
+
+Consider a set of arbitrary distribution $q(\boldsymbol{z}_n)$ over each hidden variable $\boldsymbol{z}_n$, then apply Jensen's inequality,
+\[
+\begin{aligned}
+\ell (\boldsymbol{\theta}) = \sum_{n=1}^{N} \log \left[ \sum_{\boldsymbol{z}_n} q(\boldsymbol{z}_n) \frac{p(\boldsymbol{y}_n, \boldsymbol{z}_n \mid \boldsymbol{\theta})}{q(\boldsymbol{z}_n)} \right]
+&\geq \sum_{n=1}^{N} \sum_{\boldsymbol{z}_n} q(\boldsymbol{z}_n) \log \frac{p(\boldsymbol{y}_n, \boldsymbol{z}_n \mid \boldsymbol{\theta})}{q(\boldsymbol{z}_n)} \\
+&= \sum_n \mathbb{E}_{q_n} \left[ \log p(\boldsymbol{y}_n, \boldsymbol{z}_n | \boldsymbol{\theta}) \right] + \mathbb{H}(q_n) \\
+&= \sum_n \text{L}(\boldsymbol{\theta}, q_n) \triangleq \text{L}(\boldsymbol{\theta}, \{q_n\})
+\end{aligned}
+\]
+where $\text{L}(\boldsymbol{\theta}, \{q_n\})$ is the evidence lower bound (ELBO).
+
+\subsubsection*{E step: fix $\boldsymbol{\theta} = \boldsymbol{\theta}^t $, and update $\{q_n\}$}
+The lower bound is a sum of $N$ terms, each of which has the form:
+\[
+\begin{aligned}
+\text{L}(\boldsymbol{\theta}, q_n) &= \sum_{\boldsymbol{z}_n} q_n(\boldsymbol{z}_n) \log \frac{p(\boldsymbol{y}_n, \boldsymbol{z}_n | \boldsymbol{\theta})}{q_n(\boldsymbol{z}_n)} \\
+&= \sum_{\boldsymbol{z}_n} q_n(\boldsymbol{z}_n) \log \frac{p(\boldsymbol{z}_n | \boldsymbol{y}_n, \boldsymbol{\theta}) p(\boldsymbol{y}_n | \boldsymbol{\theta})}{q_n(\boldsymbol{z}_n)} \\
+&= \sum_{\boldsymbol{z}_n} q_n(\boldsymbol{z}_n) \log \frac{p(\boldsymbol{z}_n | \boldsymbol{y}_n, \boldsymbol{\theta})}{q_n(\boldsymbol{z}_n)} + \sum_{\boldsymbol{z}_n} q_n(\boldsymbol{z}_n) \log p(\boldsymbol{y}_n | \boldsymbol{\theta}) \\
+&= -D_{\mathbb{KL}} \left( q_n(\boldsymbol{z}_n) \, \| \, p(\boldsymbol{z}_n | \boldsymbol{y}_n, \boldsymbol{\theta}) \right) + \log p(\boldsymbol{y}_n | \boldsymbol{\theta})
+\end{aligned}
+\]
+where $D_{\mathbb{KL}}(q \| p) \geq 0$ and $D_{\mathbb{KL}}(q \| p) = 0$ iff $q = p$.
+Hence, the maximization of $\text{L}(\boldsymbol{\theta}, \{q_n\})$ wrt $\{q_n\}$ can be done by setting each one to $q_n^* = p(\boldsymbol{z}_n | \boldsymbol{y}_n, \boldsymbol{\theta})$.
+Note that, $p(\boldsymbol{z}_n | \boldsymbol{y}_n, \boldsymbol{\theta}) = \frac{p(\boldsymbol{y}_n, \boldsymbol{z}_n \mid \boldsymbol{\theta})}{\sum_{\boldsymbol{z}'_n} p(\boldsymbol{y}_n, \boldsymbol{z}'_n \mid \boldsymbol{\theta})}$ 
+and $p(\boldsymbol{y}_n, \boldsymbol{z}_n \mid \boldsymbol{\theta}) = p(\boldsymbol{y}_n \mid \boldsymbol{z}_n , \boldsymbol{\theta})p(\boldsymbol{z}_n)$ are computable since the prior and conditional distribution on $\boldsymbol{z}_n$ is defined when defining the probabilistic latent model.
+
+This can be shown that fits into the $Q(\boldsymbol{\theta}, \boldsymbol{\theta}^{t})$ formulation.
+
+\subsubsection*{M step: fix $\{q_n\} = \{q_n^*\}$, and update $\boldsymbol{\theta}$}
+In the M step, we need to maximize $\text{L}(\boldsymbol{\theta}, \{q_n^t\})$ wrt $\boldsymbol{\theta}$, where the $q_n^t$ are the distributions computed in the E step at iteration $t$. Since the entropy terms $\mathbb{H}(q_n)$ are constant wrt $\boldsymbol{\theta}$, so dropping them in the M step. Then, left with
+\[
+\ell^t(\boldsymbol{\theta}) = \sum_n \mathbb{E}_{q_n^t} \left[ \log p(\boldsymbol{y}_n, \boldsymbol{z}_n | \boldsymbol{\theta}) \right]
+\]
+This is the \textbf{expected complete data log likelihood}. Then, the optimization task is,
+\[
+\boldsymbol{\theta}^{t+1} = \arg\max_{\boldsymbol{\theta}} \sum_n \mathbb{E}_{q_n^t} \left[ \log p(\boldsymbol{y}_n, \boldsymbol{z}_n | \boldsymbol{\theta}) \right]
+\]
+
+\section{Mixture Models}
+To create more complex probability models is to take a convex combination of simple
+distributions. This is called a mixture model.
+\[
+p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} p(z=k|\boldsymbol{\theta}) p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k p(\boldsymbol{y}|z=k, \boldsymbol{\theta})
+\]
+$\pi_k$ is the mixture weight for component $k$, and $\sum_{k=1}^{K} \pi_k = 1$, and the \textbf{latent variable} $z \in \{1, \ldots, K\}$ which specifies which distribution to use for generating the output $\boldsymbol{y}$.
+
+A \textbf{Gaussian mixture models (GMM)} is a mixture model where each component is a Gaussian distribution,
+\[
+p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k \mathcal{N}(\boldsymbol{y}|\boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k)
+\]
+
+GMMs are often used for unsupervised clustering of real-valued data samples $\boldsymbol{y}_n \in \mathbb{R}^D$. 
+First, the parameters $\boldsymbol{\theta}$ of the GMM can be estimated using MLE, often with the Expectation-Maximization (EM) algorithm.
+\[
+\hat{\boldsymbol{\theta}} = \operatorname*{argmax}_{\boldsymbol{\theta}} \log p(\{\boldsymbol{y}_n : n = 1, \ldots, N\} \mid \boldsymbol{\theta})
+\]
+Then, we associate each data point $\boldsymbol{y}_n$ with a discrete latent variable $z_n \in \{1, \ldots, K\}$, which indicates which mixture component or cluster generated the data point. The posterior distribution over the latent variable is given by Bayes' rule:
+\[
+p(z_n=k|\boldsymbol{y}_n, \boldsymbol{\theta}) = \frac{p(\boldsymbol{y}_n|z_n=k, \boldsymbol{\theta}) p(z_n=k|\boldsymbol{\theta})}{\sum_{j=1}^{K} p(\boldsymbol{y}_n|z_n=j, \boldsymbol{\theta}) p(z_n=j|\boldsymbol{\theta})} 
+\]
+This quantity is known as the \textbf{responsibility} of cluster $k$ for data point $\boldsymbol{y}_n$. Then, we can compute the most probable cluster assignment as:
+\[
+\hat{z}_n = \operatorname*{argmax}_{k} p(z_n=k|\boldsymbol{y}_n, \boldsymbol{\theta})
+\]
+This forms the basis of the clustering alorithms like the K-means clustering.
+
+A \textbf{Bernoulli mixture model (BMM)} can be used for binary-valued data, where each mixture component has the following form:
+\[
+p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \prod_{d=1}^{D} \text{Ber}(y_d | \mu_{dk}) = \prod_{d=1}^{D} \mu_{dk}^{y_d} (1 - \mu_{dk})^{1-y_d}
+\]
 
 \clearpage
 \part{Linear Models and Neural Networks}
@@ -1098,9 +1169,9 @@ In summary,
 \end{enumerate}
 
 \textbf{Inference}
-Here there is a choice, since the encoder gives a \emph{distribution}, not a point:
+Since the encoder gives a \emph{distribution}, not a point:
 \begin{itemize}
-    \item Option A: use the mean only, $\boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x})$, as the reduced representation --- deterministic, ignores $\sigma_{\boldsymbol{\phi}}(\boldsymbol{x})$ entirely. This is typical when a fixed embedding is needed (e.g.\ for downstream clustering/visualization).
+    \item Option A: use the mean only, $\boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x})$, as the reduced representation --- deterministic, ignores $\sigma_{\boldsymbol{\phi}}(\boldsymbol{x})$ entirely. 
     \item Option B: sample $\boldsymbol{z} \sim q_{\boldsymbol{\phi}}(\boldsymbol{z}\mid \boldsymbol{x}) = \mathcal{N}(\mu_{\boldsymbol{\phi}}(\boldsymbol{x}), \sigma_{\boldsymbol{\phi}}(\boldsymbol{x})^2)$ each time --- introduces stochasticity into the reduced representation.
 \end{itemize}
 Key property: because of the KL regularization during training, the resulting $\boldsymbol{z}$-space (using $\mu_{\boldsymbol{\phi}}(\boldsymbol{x})$) tends to be smoother and better organized around the origin than a plain AE's latent space, at some cost to reconstruction fidelity (since the KL term competes with the reconstruction term).
