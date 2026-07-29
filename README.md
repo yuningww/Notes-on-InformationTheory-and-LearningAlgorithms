@@ -1,7 +1,28 @@
 # Notes on Information Theory and Learning Algorithms
 Notes summarizing some of the core information and coding theories, some practical learning algorithms and their mathematical foundations.
 
-Reference:
+**Project Structure**
+```
+Notes-on-InformationTheory-and-LearningAlgorithms/
+├── Information Theory/
+│   ├── information_theory_notes.pdf
+│   ├── information_theory_notes.tex
+│   ├── images/
+│   └── ...  #cache
+├── Coding Theory/
+│   ├── coding_notes.pdf
+│   ├── coding_notes.tex
+│   ├── images/
+│   └── ...
+├── Learning Algorithms/
+│   ├── learning_notes.pdf
+│   ├── learning_notes.tex
+│   ├── images/
+│   └── ...
+└── README.md
+```
+
+**Reference**
 1. Dobilas, Saul. “VAE: Variational Autoencoders - How to Employ Neural Networks to Generate New Images | Towards Data Science.” 18 Apr. 2022.
 2. MacKay, David J C. Information Theory, Inference and Learning Algorithms. Cambridge University Press, 25 Sept. 2003.
 3. Murphy, Kevin P. Probabilistic Machine Learning : An Introduction. Cambridge, MIT Press, 2022.

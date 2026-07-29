@@ -120,6 +120,118 @@ A \textbf{Bernoulli mixture model (BMM)} can be used for binary-valued data, whe
 p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \prod_{d=1}^{D} \text{Ber}(y_d | \mu_{dk}) = \prod_{d=1}^{D} \mu_{dk}^{y_d} (1 - \mu_{dk})^{1-y_d}
 \]
 
+\section{Matrix Calculus}
+\subsection{Functions that map scalars to scalars}
+
+A scalar-argument function $f : \mathbb{R} \to \mathbb{R}$, its derivative is defined as
+\[
+f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h}
+\]
+It can be interpreted as the slope of the tangent line at $f(x)$, and hence
+\[
+f(x + h) \approx f(x) + f'(x)h
+\]
+
+\subsection{Functions that map vectors to scalars}
+A vector-argument functions, $f : \mathbb{R}^n \to \mathbb{R}$, by defining
+the \textbf{partial derivative} of $f$ with respect to $x_i$ to be
+
+\[
+\frac{\partial f}{\partial x_i} = \lim_{h \to 0} \frac{f(\boldsymbol{x} + h\boldsymbol{e}_i) - f(\boldsymbol{x})}{h}
+\]
+where $\boldsymbol{e}_i$ is the $i$'th unit vector.
+
+The \textbf{gradient} of a function at a point $\boldsymbol{x}$ is the vector of its partial derivatives:
+\[
+\boldsymbol{g} = \frac{\partial f}{\partial \boldsymbol{x}} = \nabla f = \begin{pmatrix} \frac{\partial f}{\partial x_1} \\ \vdots \\ \frac{\partial f}{\partial x_n} \end{pmatrix}
+\]
+
+The \textbf{directional derivative} measures how much the function $f : \mathbb{R}^n \to \mathbb{R}$ changes along a direction $\boldsymbol{v}$ in space,
+\[
+D_{\boldsymbol{v}} f(\boldsymbol{x}) = \lim_{h \to 0} \frac{f(\boldsymbol{x} + h\boldsymbol{v}) - f(\boldsymbol{x})}{h} = \nabla f^\top \boldsymbol{v}
+\]
+
+Suppose that some of the arguments to the function depend on each other $f(t, x(t), y(t))$. The \textbf{total derivative} of $f$ wrt $t$ is:
+\[
+\frac{df}{dt} = \frac{\partial f}{\partial t} + \frac{\partial f}{\partial x} \frac{dx}{dt} + \frac{\partial f}{\partial y} \frac{dy}{dt}
+\]
+then \textbf{total differential},
+\[
+df = \frac{\partial f}{\partial t} dt + \frac{\partial f}{\partial x} dx + \frac{\partial f}{\partial y} dy
+\]
+This measures how much $f$ changes when we change $t$, both via the direct effect of $t$ on $f$, but also indirectly, via the effects of $t$ on $x$ and $y$.
+
+The \textbf{Hessian matrix} is the (symmetric) $n \times n$ matrix of second partial derivatives:
+\[
+\mathbf{H}_f = \frac{\partial^2 f}{\partial \boldsymbol{x}^2} = \nabla^2 f = \begin{pmatrix} \dfrac{\partial^2 f}{\partial x_1^2} & \cdots & \dfrac{\partial^2 f}{\partial x_1 \partial x_n} \\ & \vdots & \\ \dfrac{\partial^2 f}{\partial x_n \partial x_1} & \cdots & \dfrac{\partial^2 f}{\partial x_n^2} \end{pmatrix}
+\]
+the Hessian is the Jacobian of the gradient.
+
+Consider a differentiable function $f: \mathbb{R}^n \to \mathbb{R}$. Here are some useful identities:
+\[
+\frac{\partial (\boldsymbol{a}^\mathsf{T} \boldsymbol{x})}{\partial \boldsymbol{x}} = \boldsymbol{a}
+\]
+\[
+\frac{\partial (\boldsymbol{b}^\mathsf{T} \mathbf{A} \boldsymbol{x})}{\partial \boldsymbol{x}} = \mathbf{A}^\mathsf{T} \boldsymbol{b}
+\]
+\[
+\frac{\partial (\boldsymbol{x}^\mathsf{T} \mathbf{A} \boldsymbol{x})}{\partial \boldsymbol{x}} = (\mathbf{A} + \mathbf{A}^\mathsf{T}) \boldsymbol{x}
+\]
+
+\subsection{Functions that map vectors to vectors}
+A function that maps a vector to another vector, $f : \mathbb{R}^n \to \mathbb{R}^m$, can be written as
+\[
+f(\boldsymbol{x}) = \begin{pmatrix} f_1(\boldsymbol{x}) \\ \vdots \\ f_m(\boldsymbol{x}) \end{pmatrix}
+\]
+where each component $f_i : \mathbb{R}^n \to \mathbb{R}$ is a scalar-valued function. The \textbf{Jacobian matrix} of this function is an $m \times n$ matrix of partial derivatives:
+\[
+\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) = \frac{\partial \boldsymbol{f}}{\partial \boldsymbol{x}^\mathsf{T}} \triangleq \begin{pmatrix} \dfrac{\partial f_1}{\partial x_1} & \cdots & \dfrac{\partial f_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \dfrac{\partial f_m}{\partial x_1} & \cdots & \dfrac{\partial f_m}{\partial x_n} \end{pmatrix} = \begin{pmatrix} \nabla f_1(\boldsymbol{x})^\mathsf{T} \\ \vdots \\ \nabla f_m(\boldsymbol{x})^\mathsf{T} \end{pmatrix}
+\in \mathbb{R}^{m \times n}
+\]
+
+There are two ways to multiply the Jacobian with a vector:
+\begin{itemize}
+    \item Jacobian vector product (JVP): $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) \boldsymbol{v} = \begin{pmatrix} \nabla f_1(\boldsymbol{x})^\mathsf{T} \\ \vdots \\ \nabla f_m(\boldsymbol{x})^\mathsf{T} \end{pmatrix} \boldsymbol{v} = \begin{pmatrix} \nabla f_1(\boldsymbol{x})^\mathsf{T} \boldsymbol{v} \\ \vdots \\ \nabla f_m(\boldsymbol{x})^\mathsf{T} \boldsymbol{v} \end{pmatrix}$.
+    \item Vector Jacobian product (VJP): $\boldsymbol{u}^\mathsf{T} \mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) = \boldsymbol{u}^\mathsf{T} \left( \frac{\partial \boldsymbol{f}}{\partial x_1}, \cdots, \frac{\partial \boldsymbol{f}}{\partial x_n} \right) = \left( \boldsymbol{u} \cdot \frac{\partial \boldsymbol{f}}{\partial x_1}, \cdots, \boldsymbol{u} \cdot \frac{\partial \boldsymbol{f}}{\partial x_n} \right)$.
+\end{itemize}
+
+Let $h(\boldsymbol{x}) = g(f(\boldsymbol{x}))$, by the chain rule of calculus,
+\[
+\mathbf{J}_h(\boldsymbol{x}) = \mathbf{J}_g(f(\boldsymbol{x})) \mathbf{J}_f(\boldsymbol{x})
+\]
+
+\subsection{Functions that map matrices to scalars}
+A function $f: \mathbb{R}^{m \times n} \to \mathbb{R}$,
+\[
+\frac{\partial f}{\partial \mathbf{X}} = \begin{pmatrix} \dfrac{\partial f}{\partial x_{11}} & \cdots & \dfrac{\partial f}{\partial x_{1n}} \\ & \vdots & \\ \dfrac{\partial f}{\partial x_{m1}} & \cdots & \dfrac{\partial f}{\partial x_{mn}} \end{pmatrix}
+\]
+Here are some useful identities:
+\[
+\frac{\partial}{\partial \mathbf{X}} (\boldsymbol{a}^\mathsf{T} \mathbf{X} \boldsymbol{b}) = \boldsymbol{a} \boldsymbol{b}^\mathsf{T}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} (\boldsymbol{a}^\mathsf{T} \mathbf{X}^\mathsf{T} \boldsymbol{b}) = \boldsymbol{b} \boldsymbol{a}^\mathsf{T}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{A} \mathbf{X} \mathbf{B}) = \mathbf{A}^\mathsf{T} \mathbf{B}^\mathsf{T}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{X}^\mathsf{T} \mathbf{A}) = \mathbf{A}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{X}^{-1} \mathbf{A}) = -\mathbf{X}^{-\mathsf{T}} \mathbf{A}^\mathsf{T} \mathbf{X}^{-\mathsf{T}}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} \text{tr}(\mathbf{X}^\mathsf{T} \mathbf{A} \mathbf{X}) = (\mathbf{A} + \mathbf{A}^\mathsf{T}) \mathbf{X}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} \det(\mathbf{A} \mathbf{X} \mathbf{B}) = \det(\mathbf{A} \mathbf{X} \mathbf{B}) \mathbf{X}^{-\mathsf{T}}
+\]
+\[
+\frac{\partial}{\partial \mathbf{X}} \log(\det(\mathbf{X})) = \mathbf{X}^{-\mathsf{T}}
+\]
+
+\section{Bound Optimization}
 
 
 \clearpage
