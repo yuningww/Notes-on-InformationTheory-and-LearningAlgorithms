@@ -280,6 +280,7 @@ p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} p(z=k|\boldsymbol{\theta}
 \]
 $\pi_k$ is the mixture weight for component $k$, and $\sum_{k=1}^{K} \pi_k = 1$, and the \textbf{latent variable} $z \in \{1, \ldots, K\}$ which specifies which distribution to use for generating the output $\boldsymbol{y}$.
 
+\subsection{Gaussian mixture models}
 A \textbf{Gaussian mixture models (GMM)} is a mixture model where each component is a Gaussian distribution,
 \[
 p(\boldsymbol{y}|\boldsymbol{\theta}) = \sum_{k=1}^{K} \pi_k \mathcal{N}(\boldsymbol{y}|\boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k)
@@ -300,6 +301,41 @@ This quantity is known as the \textbf{responsibility} of cluster $k$ for data po
 \]
 This forms the basis of the clustering alorithms like the K-means clustering.
 
+\subsection{EM for a GMM}
+\subsubsection*{E step}
+The E step computes the responsibility of cluster $k$ for generating data point $n$, as estimated using the current parameter estimates $\boldsymbol{\theta}^{t}$:
+\[
+r_{nk}^{t} = p^*(z_n = k | \boldsymbol{y}_n, \boldsymbol{\theta}^{t}) = \frac{\pi_k^{t} p(\boldsymbol{y}_n | z_n=k, \boldsymbol{\theta}^{t})}{\sum_{k'} \pi_{k'}^{t} p(\boldsymbol{y}_n | z_n=k', \boldsymbol{\theta}^{t})}
+\]
+
+\subsubsection*{M step}
+The M step maximizes the expected complete data log likelihood, given by
+\[
+\begin{aligned}
+\ell^t(\boldsymbol{\theta}) &= \mathbb{E} \left[ \sum_n \log p(z_n | \boldsymbol{\pi}) + \sum_n \log p(\boldsymbol{y}_n | z_n, \boldsymbol{\theta}) \right] \\
+&= \mathbb{E} \left[ \sum_n \log \left( \prod_k \pi_k^{z_{nk}} \right) + \sum_n \log \left( \prod_k \mathcal{N}(\boldsymbol{y}_n | \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k)^{z_{nk}} \right) \right] \\
+&= \sum_n \sum_k \mathbb{E}[z_{nk}] \log \pi_k + \sum_n \sum_k \mathbb{E}[z_{nk}] \log \mathcal{N}(\boldsymbol{y}_n | \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k) \\
+&= \sum_n \sum_k r_{nk}^{(t)} \log(\pi_k) - \frac{1}{2} \sum_n \sum_k r_{nk}^{(t)} \left[ \log |\boldsymbol{\Sigma}_k| + (\boldsymbol{y}_n - \boldsymbol{\mu}_k)^\mathsf{T} \boldsymbol{\Sigma}_k^{-1} (\boldsymbol{y}_n - \boldsymbol{\mu}_k) \right] + \text{const}
+\end{aligned}
+\]
+where $z_{nk} = \mathbb{I}(z_n = k)$ is a one-hot encoding of the categorical value $z_n$. Then, the parameter estimates are
+\[
+\boldsymbol{\mu}_k^{(t+1)} = \frac{\sum_n r_{nk}^{(t)} \boldsymbol{y}_n}{r_k^{(t)}}
+\]
+\[
+\begin{aligned}
+\boldsymbol{\Sigma}_k^{(t+1)} &= \frac{\sum_n r_{nk}^{(t)} (\boldsymbol{y}_n - \boldsymbol{\mu}_k^{(t+1)})(\boldsymbol{y}_n - \boldsymbol{\mu}_k^{(t+1)})^\mathsf{T}}{r_k^{(t)}} \\
+&= \frac{\sum_n r_{nk}^{(t)} \boldsymbol{y}_n \boldsymbol{y}_n^\mathsf{T}}{r_k^{(t)}} - \boldsymbol{\mu}_k^{(t+1)} (\boldsymbol{\mu}_k^{(t+1)})^\mathsf{T}
+\end{aligned}
+\]
+where $r_k^{(t)} \triangleq \sum_n r_{nk}^{(t)}$ is the weighted number of points assigned to cluster $k$. The mean of cluster $k$ is just the weighted average of all points assigned to cluster $k$, and the covariance is proportional to the weighted empirical scatter matrix.
+
+The M step for the mixture weights is a weighted form of the usual MLE:
+\[
+\pi_k^{(t+1)} = \frac{1}{N} \sum_n r_{nk}^{(t)} = \frac{r_k^{(t)}}{N}
+\]
+
+\subsection{Bernoulli mixture model}
 A \textbf{Bernoulli mixture model (BMM)} can be used for binary-valued data, where each mixture component has the following form:
 \[
 p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \prod_{d=1}^{D} \text{Ber}(y_d | \mu_{dk}) = \prod_{d=1}^{D} \mu_{dk}^{y_d} (1 - \mu_{dk})^{1-y_d}
