@@ -1,0 +1,35 @@
+# LaTeX compilation artifacts
+*.aux
+*.log
+*.toc
+*.out
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+*.idx
+*.ilg
+*.ind
+*.nav
+*.snm
+*.vrb
+*.figlist
+*.makefile
+*.fls
+*.xdv
+*.auxlock
+*.dvi
+*.ps
+
+# latexmk
+*.fdb_latexmk
+*.fls
+
+# macOS
+.DS_Store
