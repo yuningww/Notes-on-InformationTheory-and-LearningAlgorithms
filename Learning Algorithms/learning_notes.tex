@@ -1212,4 +1212,57 @@ Since the encoder gives a \emph{distribution}, not a point:
 \end{itemize}
 Key property: because of the KL regularization during training, the resulting $\boldsymbol{z}$-space (using $\mu_{\boldsymbol{\phi}}(\boldsymbol{x})$) tends to be smoother and better organized around the origin than a plain AE's latent space, at some cost to reconstruction fidelity (since the KL term competes with the reconstruction term).
 
+\clearpage
+\part{Kernel Methods}
+
+Kernel methods are a class of nonparametric methods for regression and classification.
+Such methods do not assume a fixed parametric form for the prediction function, but instead try to estimate the function itself directly from data.
+
+For a given dataset $\mathcal{D} = \{(\boldsymbol{x}_n, y_n)\}_{n=1}^N$, where $y_n = f(\boldsymbol{x}_n)$ and $f$ is unknown.
+To predict the function value at a new point $\boldsymbol{x}_*$, kernel methods predicts that $f(\boldsymbol{x}_*)$ with some weighted combination of the $\{ f(\boldsymbol{x}_n) \}$ values, i.e. remembering the entire
+training set $\mathcal{D} = \{(\boldsymbol{x}_n, y_n)\}_{n=1}^N$ to make predictions. 
+
+\section{Mercer Kernels and Mercer's Theorem}
+
+The key to nonparametric methods is that we need a way to encode prior knowlegde about the similarity of two input vectors.
+To define similarity, we use a \textbf{kernel function}. 
+
+Here, consider a \textbf{Mercer kernel}, also called a positive definite kernel.
+This is any symmetric function $\mathcal{K}: \mathcal{X} \times \mathcal{X} \to \mathbb{R}^+$ such that
+\[
+\sum_{i=1}^N \sum_{j=1}^N c_i c_j \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) \geq 0
+\]
+for all $\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N \in \mathcal{X}$ which are vectors in $\mathbb{R}^D$ and any choice of numbers $c_i \in \mathbb{R}$. 
+Assuming $\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) > 0$, so that only equality if $c_i = 0$ for all $i$.
+
+Another way to understand this condition: given a set of $N$ datapoints, define the Gram matrix as the following $N \times N$ similarity matrix:
+\[
+\mathbf{K} = \begin{bmatrix}
+\mathcal{K}(\boldsymbol{x}_1, \boldsymbol{x}_1) & \cdots & \mathcal{K}(\boldsymbol{x}_1, \boldsymbol{x}_N) \\
+\vdots & \vdots & \vdots \\
+\mathcal{K}(\boldsymbol{x}_N, \boldsymbol{x}_1) & \cdots & \mathcal{K}(\boldsymbol{x}_N, \boldsymbol{x}_N)
+\end{bmatrix} \in \mathbb{R}^{N \times N}
+\]
+then, the condition becomes that $\mathbf{K}$ is positive definite, i.e. all its eigenvalues are positive, for any set of distinct inputs $\{\boldsymbol{x}_i\}_{i=1}^N$.
+
+\subsection{Mercer's theorem}
+Any symmetric matrix $\mathbf{K}$ can be represented using an eigendecomposition $\mathbf{K} = \mathbf{U} \boldsymbol{\Lambda} \mathbf{U}^T$ where $\mathbf{U}$ is an orthonormal matrix of eigenvectors and $\boldsymbol{\Lambda}$ is a diagonal matrix of eigenvalues $\lambda_i > 0$.
+
+Consider an element $(i, j)$ of $\mathbf{K}$,
+\[
+k_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)  = (\boldsymbol{\Lambda}^{\frac{1}{2}} \mathbf{U}_{:i})^\top (\boldsymbol{\Lambda}^{\frac{1}{2}} \mathbf{U}_{:j})
+\]
+where $\mathbf{U}_{:i}$ is the $i$-th column of $\mathbf{U}$. Define a mapping $\boldsymbol{\phi}: \mathbb{R}^D \to \mathbb{R}^N$ as
+$\boldsymbol{\phi}(\boldsymbol{x}_i) = \boldsymbol{\Lambda}^{\frac{1}{2}} \mathbf{U}_{:i}$
+Then,
+\[
+k_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) = \boldsymbol{\phi}(\boldsymbol{x}_i)^\top \boldsymbol{\phi}(\boldsymbol{x}_j)
+= \sum_{m = 1}^N \phi_m(\boldsymbol{x}_i) \phi_m(\boldsymbol{x}_j)
+\]
+In theory, the kernel function can be generalized to $N \to \infty$ with $\lambda_i > 0$ as a prerequisite.
+
+The mapping $\boldsymbol{\phi}$ is a mapping from input space to the feature space, which is a Hilbert space. \textbf{The kernel function $\mathcal{K}$ can be interpreted as an inner product in the feature space}, i.e. $\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) = \langle \boldsymbol{\phi}(\boldsymbol{x}_i), \boldsymbol{\phi}(\boldsymbol{x}_j) \rangle$.
+The kernel trick is that $\boldsymbol{\phi}$ is never explicitly computed, but from eigendecomposition of $\mathbf{K}$.
+
+
 \end{document}

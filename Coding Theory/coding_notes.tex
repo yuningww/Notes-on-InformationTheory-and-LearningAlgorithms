@@ -16,6 +16,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
 \newtheorem{lemma}{Lemma}
 
 % Bigger & bolder title
@@ -40,6 +41,116 @@
 \author{}
 \date{}
 \maketitle
+
+\begin{quote}
+{\Large
+  "Almost all codes are good codes, except those we can think of."
+}
+\end{quote}
+
+\clearpage
+\section{Mathematical Preliminaries}
+\subsection{Sets}
+
+\textbf{A set is a collection of certain objects}, commonly called the elements of the set.
+A set $S$ with a finite number of elements is called a finite set; otherwise, it is called an infinite set.
+The number of elements in a set $S$ is called the \textbf{cardinality} of the set and is denoted by $|S|$.
+A part of a set $S$ is itself a set, called a subset of $S$. A subset of $S$ with cardinality smaller than that of $S$ is called a proper subset of $S$.
+
+A \textbf{binary operation} on a set $S$ is a rule that assigns to any pair of elements in $S$, taken in a definite order, another element in the same set. 
+A binary operation is said to be \textbf{closed} on a set $S$ if the result of the operation on any two elements of $S$ is also an element of $S$.
+
+\begin{definition}
+  Let $S$ be a set with a binary operation $\ast$. The operation is said to be \textbf{associative} if, given any elements $a$, $b$, and $c$ in $S$, the following equality holds:
+  \[
+    (a \ast b) \ast c = a \ast (b \ast c)
+  \]
+\end{definition}
+
+\begin{definition}
+  Let $S$ be a set with a binary operation $\ast$. The operation is said to be \textbf{commutative} if, given any two elements $a$, $b$ in $S$, the following equality holds:
+  \[
+    a \ast b = b \ast a
+  \]
+\end{definition}
+
+Given two sets, $X$ and $Y$, we can form a set $X \cup Y$ that consists of the elements in either $X$ or $Y$, or both. This set $X \cup Y$ is called the \textit{union} of $X$ and $Y$. 
+
+We can also form a set $X \cap Y$ that consists of the set of all elements in both $X$ and $Y$. The set $X \cap Y$ is called the \textit{intersection} of $X$ and $Y$. 
+
+A set with no element is called an \textit{empty set}, denoted by $\emptyset$. 
+
+Two sets are said to be \textit{disjoint} if their intersection is empty, i.e., they have no element in common. If $Y$ is a subset of $X$, the set that contains the elements in $X$ but not in $Y$ is called the \textit{difference} between $X$ and $Y$ and is denoted by $X \backslash Y$.
+
+\subsection{Groups}
+
+A group is an algebraic system with one binary operation defined on it.
+
+\begin{definition}
+  A group is a set G together with a binary operation $\ast$ defined on G such that the following axioms (conditions) are satisfied.
+  \begin{enumerate}
+    \item The binary operation $\ast$ is associative. 
+    \item G contains an element e such that, for any element a of G,
+    \[
+      a \ast e = e \ast a = a
+    \]
+    This element e is called an identity element of G with respect to the operation $\ast$.
+    \item For any element a of G, there exists an element $a'$ of G such that,
+    \[
+      a \ast a' = a' \ast a = e
+    \]
+    This element $a'$ is called the inverse of a with respect to the operation $\ast$.
+  \end{enumerate}
+\end{definition}
+A group G is said to be commutative if the binary operation $\ast$ defined on it is also commutative, which is also called an abelian/commutative group.
+
+\begin{theorem}
+  The identity element of a group is unique, and the inverse of each element of a group is unique.
+\end{theorem}
+
+\begin{proof}
+Suppose both $e$ and $e'$ are identity elements of $G$. Then $e * e' = e$ and $e * e' = e'$. This implies that $e$ and $e'$ are identical. 
+Then, let $a$ be an element of $G$. Suppose $a$ has two inverses, say $a'$ and $a''$. Then
+\[
+a'' = e * a'' = (a' * a) * a'' = a' * (a * a'') = a' * e = a'.
+\]
+\end{proof}
+
+\begin{definition}
+  A group G is called finite (or infinite) if it contains a finite (or an infinite) number of elements. The number of elements in a finite group is called the order (i.e. cardinality |G|) of the group.
+\end{definition}
+
+Cayley table is a convenient way of presenting a finite group G with operation $\ast$. A table displaying the group operation $\ast$ is constructed by labeling the rows and the columns of the table by the group elements. The element appearing in the row labeled by a and the column labeled by b is then taken to be a $\ast$ b.
+
+Finite groups under modulo-$m$ addition with $m =2, 3, 4,\cdots$ are called \textbf{additive groups}; finite groups under modulo-$p$ multiplication with $p = 2, 3, 4,\cdots$ are called \textbf{multiplicative groups}.
+
+\begin{definition}
+  A multiplicative group G is said to be cyclic if there exists an element $a$ in G such that, for any b in G, there is some integer $i$ with $b = a^i$. 
+  Such an element $a$ is called a generator of the cyclic group and we write G $= \langle a \rangle$.
+\end{definition}
+A cyclic group may have more than one generator. Note that $b = a^i$ means $i$-th $a$ "multiplied" together, which might not be multiply $\times$ but other binary operation $\ast$ defined on the group.
+
+A group $G$ contains certain subsets that form groups in their own right under the operation of $G$. Such subsets are called subgroups of $G$.
+\begin{definition}
+  An non-empty subset H of a group G with an operation $\ast$ is called a subgroup of G if H is itself a group with respect to the operation $\ast$ of G, that is, H satisfies all the axioms of a group under the same operation $\ast$ of G.
+\end{definition}
+To determine whether a subset $H$ of a group G with an operation $\ast$ is a subgroup, we need not verify all the axioms. The following axioms are sufficient:
+\begin{enumerate}
+  \item For any two elements a and b in H, a $\ast$ b is also an element of H.
+  \item For any element a in H, its inverse is also in H.
+\end{enumerate}
+
+\begin{definition}
+  Let $H$ be a subgroup of a group $G$ with binary operation $\ast$. 
+  Let $a$ be an element of $G$. Define two subsets of elements of $G$ as follows: $a \ast H = \{ a \ast h: h \in H \}$ and $H \ast a = \{ h \ast a: h \in H \}$. These two subsets, $a \ast H$ and $H \ast a$, are called left and right cosets of $H$.
+\end{definition}
+
+It is clear that, if $a = e$ is the identity element of $G$, then $e \ast H = H \ast e = H$, and so $H$ is also considered as a coset of itself. If $G$ is a commutative group, then the left coset $a \ast H$ and the right coset $H \ast a$ are identical, i.e., $a \ast H = H \ast a$ for any $a \in G$.
+
+
+
+\subsection{Fields}
+
 
 \clearpage
 \section{Binary Linear Block Codes}

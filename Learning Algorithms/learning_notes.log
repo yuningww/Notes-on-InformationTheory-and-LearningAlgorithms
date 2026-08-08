@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.9.20)  31 JUL 2026 11:04
+This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.9.20)  8 AUG 2026 12:02
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -948,19 +948,25 @@ File: images/reparameterization.png Graphic file (type bmp)
 
 [28]
 
-[29] (./learning_notes.aux)
+[29]
+
+[30
+
+]
+
+[31] (./learning_notes.aux)
  ***********
 LaTeX2e <2024-06-01> patch level 2
 L3 programming layer <2022/08/05>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 20534 strings out of 474235
- 473679 string characters out of 5742253
+ 20536 strings out of 474235
+ 473737 string characters out of 5742253
  876814 words of memory out of 5000000
- 42861 multiletter control sequences out of 15000+600000
+ 42863 multiletter control sequences out of 15000+600000
  567798 words of font info for 97 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  98i,16n,107p,1217b,415s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on learning_notes.pdf (29 pages).
+Output written on learning_notes.pdf (31 pages).
