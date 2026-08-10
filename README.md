@@ -1,5 +1,5 @@
 # Notes on Information Theory and Learning Algorithms
-Notes summarizing some of the core information and coding theories, some practical learning algorithms and their mathematical foundations.
+Notes summarizing some of the core information and coding theories, some practical learning algorithms and their mathematical foundations. With an emphasis on mathematical derivations and intuitions.
 
 **Project Structure**
 ```
@@ -7,18 +7,15 @@ Notes-on-InformationTheory-and-LearningAlgorithms/
 ├── Information Theory/
 │   ├── information_theory_notes.pdf
 │   ├── information_theory_notes.tex
-│   ├── images/
-│   └── ...  #cache
+│   └── images/
 ├── Coding Theory/
 │   ├── coding_notes.pdf
 │   ├── coding_notes.tex
-│   ├── images/
-│   └── ...
+│   └── images/
 ├── Learning Algorithms/
 │   ├── learning_notes.pdf
 │   ├── learning_notes.tex
-│   ├── images/
-│   └── ...
+│   └── images/
 └── README.md
 ```
 

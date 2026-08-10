@@ -36,13 +36,189 @@
 
 \begin{document}
 
-\title{Notes on ML Models}
+\title{Notes on Probabilistic Machine Learning}
 \author{}
 \date{}
 \maketitle
+
+\begin{quote}
+{\Large
+  Probability theory is nothing but common sense reduced to calculations.
+  \begin{flushright}
+    --- Pierre Laplace, 1812
+  \end{flushright}
+}
+\end{quote}
+
+
 \clearpage
 \part{Mathematical Foundations}
 This part is not aiming to provide a general coverage of all the mathematical foundations, but rather to provide a quick reference for the mathematical concepts that are frequently used and worth noting.
+
+\section{Multivariate Probability Models}
+
+\subsection{Measures the dependency}
+\subsubsection*{Covariance}
+The covariance between two rv's $X$ and $Y$ measures the degree to which $X$ and $Y$ are linearly related.
+\[
+\text{Cov}(X, Y) \triangleq \mathbb{E}[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])] = \mathbb{E}[XY] - \mathbb{E}[X]\mathbb{E}[Y]
+\]
+If $\boldsymbol{x} \in \mathbb{R}^D$ is a random vector, its covariance matrix is defined to be the following symmetric, positive semi-definite matrix:
+\[
+\begin{aligned}
+\text{Cov}[\boldsymbol{x}] &\triangleq \mathbb{E} \left[ (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\mathsf{T} \right] \triangleq \boldsymbol{\Sigma} = \boldsymbol{K}_{xx} \\
+&= \begin{pmatrix}
+\mathbb{V}[X_1] & \text{Cov}[X_1, X_2] & \cdots & \text{Cov}[X_1, X_D] \\
+\text{Cov}[X_2, X_1] & \mathbb{V}[X_2] & \cdots & \text{Cov}[X_2, X_D] \\
+\vdots & \vdots & \ddots & \vdots \\
+\text{Cov}[X_D, X_1] & \text{Cov}[X_D, X_2] & \cdots & \mathbb{V}[X_D]
+\end{pmatrix}
+\end{aligned}
+\]
+expanding $\mathbb{E} \left[ (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\mathsf{T} \right]$ gives the important result
+\[
+\boldsymbol{R}_{xx} = \mathbb{E}[\boldsymbol{x} \boldsymbol{x}^\mathsf{T}] = \boldsymbol{\Sigma} + \boldsymbol{\mu} \boldsymbol{\mu}^\mathsf{T}
+\]
+
+Under linear transformations, the covariance matrix transforms as follows:
+\[
+\text{Cov}[\mathbf{A}\boldsymbol{x} + \boldsymbol{b}] = \mathbf{A} \text{Cov}[\boldsymbol{x}] \mathbf{A}^\mathsf{T}
+\]
+
+The cross-covariance between two random vectors
+\[
+\text{Cov}[\boldsymbol{x}, \boldsymbol{y}] = \mathbb{E}[(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{y} - \mathbb{E}[\boldsymbol{y}])^\mathsf{T}] = \text{Cov}[\boldsymbol{x}, \boldsymbol{y}]^\top
+\]
+where $\text{Cov}[\boldsymbol{x}, \boldsymbol{y}] \in \mathbb{R}^{\text{Dim}(\boldsymbol{x}) \times \text{Dim}(\boldsymbol{y})}$ and the $(i, j)$-th entry is $\text{Cov}[\boldsymbol{x}, \boldsymbol{y}]_{ij} = \text{Cov}[\boldsymbol{x}_i, \boldsymbol{y}_j]$
+
+\subsubsection*{Correlation}
+The correlation coefficient between X and Y is defined as
+\[
+\rho \triangleq \text{corr}[X, Y] = \frac{\text{Cov}[X, Y]}{\sqrt{\mathbb{V}[X] \mathbb{V}[Y]}}
+\]
+which is a normalised measure with $-1 \leq \rho \leq 1$. This can be thought as a measure of \textit{degree of linearity}.
+(i.e. corr$[X,Y] = 1$ if and only if $Y = aX+ b$ (and $a>0$) for some parameters $a$ and $b$)
+
+Correlation matrix of a vector $\boldsymbol{x}$ of $D$ related random variables is defined as
+\[
+\text{corr}(\boldsymbol{x}) = \begin{pmatrix}
+    1 & \rho_{12} & \cdots & \rho_{1D} \\
+    \rho_{21} & 1 & \cdots & \rho_{2D} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    \rho_{D1} & \rho_{D2} & \cdots & 1
+\end{pmatrix}
+\]
+or compactly as,
+\[
+\text{corr}(\boldsymbol{x}) = \text{diag}(\boldsymbol{K}_{xx})^{-\frac{1}{2}} \boldsymbol{K}_{xx} \text{diag}(\boldsymbol{K}_{xx})^{-\frac{1}{2}}
+\]
+where $\boldsymbol{K}_{xx}$ is the (auto)covariance matrix of $\boldsymbol{x}$,
+\[
+\begin{aligned}
+\boldsymbol{K}_{xx} = \boldsymbol{\Sigma} &= \mathbb{E} \left[ (\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])(\boldsymbol{x} - \mathbb{E}[\boldsymbol{x}])^\mathsf{T} \right] \\
+&= \mathbb{E}[\boldsymbol{x} \boldsymbol{x}^\mathsf{T}] - \boldsymbol{\mu} \boldsymbol{\mu}^\mathsf{T} = \boldsymbol{R}_{xx} - \boldsymbol{\mu} \boldsymbol{\mu}^\mathsf{T}
+\end{aligned}
+\]
+where $\boldsymbol{R}_{xx}$ is the (auto)correlation matrix of $\boldsymbol{x}$.
+
+\subsubsection*{Uncorrelated does not imply independent}
+Independent implies uncorrelated,
+\[
+p(X, Y) = p(X)p(Y) \implies \text{Cov}[X, Y] = 0 \implies \text{corr}[X, Y] = 0
+\]
+However, the converse is not true: uncorrelated does not imply independent (eg. $X \sim U(-1,1)$, $Y = X^2$ have zero correlation but are not independent). 
+A more general measure of dependence between random variables is mutual information. 
+This is zero only if the variables truly are independent.
+
+\subsection{The multivariate Gaussian/Normal distribution (MVN)}
+The MVN density is defined by the following:
+\[
+\mathcal{N}(\boldsymbol{y} | \boldsymbol{\mu}, \boldsymbol{\Sigma}) \triangleq \frac{1}{(2\pi)^{D/2} |\boldsymbol{\Sigma}|^{1/2}} \exp \left[ -\frac{1}{2} (\boldsymbol{y} - \boldsymbol{\mu})^\mathsf{T} \boldsymbol{\Sigma}^{-1} (\boldsymbol{y} - \boldsymbol{\mu}) \right]
+\]
+where $\boldsymbol{\mu} = \mathbb{E}[\boldsymbol{y}] \in \mathbb{R}^D$ is the mean vector, and $\boldsymbol{\Sigma} = \text{Cov}[\boldsymbol{y}]$ is the $D \times D$ covariance matrix.
+
+\subsection{Marginals and conditionals of an MVN}
+For a Gaussian random vector $\boldsymbol{y} = (\boldsymbol{y}_1, \boldsymbol{y}_2)$,
+if we are conditioned on a set of noise-free observations $\boldsymbol{y}_2$, then we can infer the hidden parts $\boldsymbol{y}_1$ by the posterior $p(\boldsymbol{y}_1 | \boldsymbol{y}_2)$.
+
+Suppose $\boldsymbol{y} = (\boldsymbol{y}_1, \boldsymbol{y}_2)$ is jointly Gaussian with parameters
+\[
+\boldsymbol{\mu} = \begin{pmatrix} \boldsymbol{\mu}_1 \\ \boldsymbol{\mu}_2 \end{pmatrix}, \quad
+\boldsymbol{\Sigma} = \begin{pmatrix} \boldsymbol{\Sigma}_{11} & \boldsymbol{\Sigma}_{12} \\ \boldsymbol{\Sigma}_{21} & \boldsymbol{\Sigma}_{22} \end{pmatrix}, \quad
+\boldsymbol{\Lambda} = \boldsymbol{\Sigma}^{-1} = \begin{pmatrix} \boldsymbol{\Lambda}_{11} & \boldsymbol{\Lambda}_{12} \\ \boldsymbol{\Lambda}_{21} & \boldsymbol{\Lambda}_{22} \end{pmatrix}
+\]
+where $\boldsymbol{\Lambda}$ is the \textbf{precision matrix} and $\boldsymbol{\Sigma}_{12} = \boldsymbol{\Sigma}_{21}^\top = \text{Cov}[\boldsymbol{y}_1, \boldsymbol{y}_2]$. 
+
+Then the marginals are given by
+\[
+\boxed{
+\begin{aligned}
+p(\boldsymbol{y}_1) &= \mathcal{N}(\boldsymbol{y}_1 | \boldsymbol{\mu}_1, \boldsymbol{\Sigma}_{11}) \\
+p(\boldsymbol{y}_2) &= \mathcal{N}(\boldsymbol{y}_2 | \boldsymbol{\mu}_2, \boldsymbol{\Sigma}_{22})
+\end{aligned}
+}
+\]
+and the posterior conditional is given by
+\[
+\boxed{
+\begin{aligned}
+p(\boldsymbol{y}_1 | \boldsymbol{y}_2) &= \mathcal{N}(\boldsymbol{y}_1 | \boldsymbol{\mu}_{1|2}, \boldsymbol{\Sigma}_{1|2}) \\
+\boldsymbol{\mu}_{1|2} &= \boldsymbol{\mu}_1 + \boldsymbol{\Sigma}_{12} \boldsymbol{\Sigma}_{22}^{-1} (\boldsymbol{y}_2 - \boldsymbol{\mu}_2) \\
+&= \boldsymbol{\mu}_1 - \boldsymbol{\Lambda}_{11}^{-1} \boldsymbol{\Lambda}_{12} (\boldsymbol{y}_2 - \boldsymbol{\mu}_2) \\
+&= \boldsymbol{\Sigma}_{1|2} \left( \boldsymbol{\Lambda}_{11} \boldsymbol{\mu}_1 - \boldsymbol{\Lambda}_{12} (\boldsymbol{y}_2 - \boldsymbol{\mu}_2) \right) \\
+\boldsymbol{\Sigma}_{1|2} &= \boldsymbol{\Sigma}_{11} - \boldsymbol{\Sigma}_{12} \boldsymbol{\Sigma}_{22}^{-1} \boldsymbol{\Sigma}_{21} = \boldsymbol{\Lambda}_{11}^{-1}
+\end{aligned}
+}
+\]
+
+The proofs rely on computing the Schur complement $\boldsymbol{\Sigma}/\boldsymbol{\Sigma}_{22} = \boldsymbol{\Sigma}_{11} - \boldsymbol{\Sigma}_{12} \boldsymbol{\Sigma}_{22}^{-1} \boldsymbol{\Sigma}_{21}$, which is not shown here.
+For the marginals, just extracting the rows and columns corresponding to $\boldsymbol{y}_1$ or $\boldsymbol{y}_2$. 
+For the conditional: the conditional mean is a linear function of $\boldsymbol{y}_2$, and the conditional covariance is a constant matrix that is independent of $\boldsymbol{y}_2$. 
+
+\subsection{Linear Gaussian systems and Bayes rule for Gaussians}
+Let $\boldsymbol{z} \in \mathbb{R}^L$ be an unknown vector of values, and $\boldsymbol{y} \in \mathbb{R}^D$ be some noisy measurement of $\boldsymbol{z}$. We assume these variables are related by the following joint distribution:
+\[
+p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{z} | \boldsymbol{\mu}_z, \boldsymbol{\Sigma}_z)
+\]
+\[
+p(\boldsymbol{y} | \boldsymbol{z}) = \mathcal{N}(\boldsymbol{y} | \mathbf{W}\boldsymbol{z} + \boldsymbol{b}, \boldsymbol{\Sigma}_y)
+\]
+where $\mathbf{W}$ is a matrix of size $D \times L$. This is an example of a \textbf{linear Gaussian system}.
+
+The corresponding joint distribution, $p(\boldsymbol{z}, \boldsymbol{y}) = p(\boldsymbol{z}) p(\boldsymbol{y} | \boldsymbol{z})$, is a $L + D$ dimensional Gaussian, with mean and covariance given by
+\[
+\boldsymbol{\mu} = \begin{pmatrix} \boldsymbol{\mu}_z \\ \mathbf{W} \boldsymbol{\mu}_z + \boldsymbol{b} \end{pmatrix}
+\]
+\[
+\boldsymbol{\Sigma} = \begin{pmatrix} \boldsymbol{\Sigma}_z & \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T} \\ \mathbf{W} \boldsymbol{\Sigma}_z & \boldsymbol{\Sigma}_y + \mathbf{W} \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T} \end{pmatrix}
+\]
+By applying the previous Gaussian conditioning formula to the joint $p(\boldsymbol{y}, \boldsymbol{z})$ we can compute the posterior $p(\boldsymbol{z} | \boldsymbol{y})$ as
+\[
+\begin{aligned}
+p(\boldsymbol{z} | \boldsymbol{y}) &= \mathcal{N}(\boldsymbol{z} | \boldsymbol{\mu}_{z|y}, \boldsymbol{\Sigma}_{z|y}) \\
+\boldsymbol{\mu}_{z|y} &= \boldsymbol{\mu}_z + \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T} (\boldsymbol{\Sigma}_y + \mathbf{W} \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T})^{-1} (\mathbf{y} - \mathbf{W} \boldsymbol{\mu}_z - \mathbf{b}) \\
+\boldsymbol{\Sigma}_{z|y} &= \boldsymbol{\Sigma}_z - \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T} (\boldsymbol{\Sigma}_y + \mathbf{W} \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T})^{-1} \mathbf{W} \boldsymbol{\Sigma}_z
+\end{aligned}
+\]
+However, this requires inverting a $D \times D$ matrix $(\boldsymbol{\Sigma}_y + \mathbf{W} \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T})$, which can be expensive if $D$ is large. Instead, we can use the matrix inversion lemma (Woodbury matrix identity) to rewrite the posterior in a more efficient form:
+\[
+\boxed{
+\begin{aligned}
+p(\boldsymbol{z} | \boldsymbol{y}) &= \mathcal{N}(\boldsymbol{z} | \boldsymbol{\mu}_{z|y}, \boldsymbol{\Sigma}_{z|y}) \\
+\boldsymbol{\Sigma}_{z|y}^{-1} &= \boldsymbol{\Sigma}_z^{-1} + \mathbf{W}^\mathsf{T} \boldsymbol{\Sigma}_y^{-1} \mathbf{W} \\
+\boldsymbol{\mu}_{z|y} &= \boldsymbol{\Sigma}_{z|y} \left[ \mathbf{W}^\mathsf{T} \boldsymbol{\Sigma}_y^{-1} (\boldsymbol{y} - \boldsymbol{b}) + \boldsymbol{\Sigma}_z^{-1} \boldsymbol{\mu}_z \right]
+\end{aligned}
+}
+\]
+This is known as \textbf{Bayes rule for Gaussians}. Furthermore, the normalization constant of the posterior is given by
+\[
+p(\boldsymbol{y}) = \int \mathcal{N}(\boldsymbol{z} | \boldsymbol{\mu}_z, \boldsymbol{\Sigma}_z) \mathcal{N}(\boldsymbol{y} | \mathbf{W}\boldsymbol{z} + \boldsymbol{b}, \boldsymbol{\Sigma}_y) \, d\boldsymbol{z} = \mathcal{N}(\boldsymbol{y} | \mathbf{W}\boldsymbol{\mu}_z + \boldsymbol{b}, \boldsymbol{\Sigma}_y + \mathbf{W} \boldsymbol{\Sigma}_z \mathbf{W}^\mathsf{T})
+\]
+
+The interpretation is as follows: in the generative story ($\boldsymbol{z} \rightarrow \boldsymbol{y}$), we first sample $\boldsymbol{z}$ from the prior $p(\boldsymbol{z})$, then we sample $\boldsymbol{y}$ from the likelihood $p(\boldsymbol{y} | \boldsymbol{z})$; in the inference story ($\boldsymbol{y} \rightarrow \boldsymbol{z}$), we observe $\boldsymbol{y}$ and want to infer the posterior distribution $p(\boldsymbol{z} | \boldsymbol{y})$.
+While the prior and likelihood are specified by the modeler, the posterior is determined by the data $\boldsymbol{y}$ through the Bayes rule.
+
+\clearpage
 \section{Maximum Likelihood Estimation}
 The process of estimating model parameters $\boldsymbol{\theta}$ from data $\mathcal{D}$ is called \textbf{model fitting}, or training, and is at the heart of machine learning.
 The key optimization problem is,
@@ -87,6 +263,7 @@ If we define $q(Y \mid \boldsymbol{x})$ denotes the model's predictive distribut
 \]
 Minimizing the expected KL divergence is equivalent to minimizing the conditional NLL.
 
+\clearpage
 \section{Matrix Calculus}
 \subsection{Functions that map scalars to scalars}
 
@@ -194,6 +371,7 @@ Here are some useful identities:
 \frac{\partial}{\partial \mathbf{X}} \log(\det(\mathbf{X})) = \mathbf{X}^{-\mathsf{T}}
 \]
 
+\clearpage
 \section{Bound Optimization}
 If the optimization goal is to maximize a function $\ell (\boldsymbol{\theta})$ wrt its parameters $\boldsymbol{\theta}$. 
 The idea of bound optimization is to construct a surrogate function $Q(\boldsymbol{\theta}; \boldsymbol{\theta}^{t})$ which is a tight lowerbound to $\ell (\boldsymbol{\theta})$ such that:
@@ -272,6 +450,7 @@ This is the \textbf{expected complete data log likelihood}. Then, the optimizati
 \boldsymbol{\theta}^{t+1} = \arg\max_{\boldsymbol{\theta}} \sum_n \mathbb{E}_{q_n^t} \left[ \log p(\boldsymbol{y}_n, \boldsymbol{z}_n | \boldsymbol{\theta}) \right]
 \]
 
+\clearpage
 \section{Mixture Models}
 To create more complex probability models is to take a convex combination of simple
 distributions. This is called a mixture model.
@@ -1261,8 +1440,53 @@ k_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) = \boldsymbol{\phi}(\bo
 \]
 In theory, the kernel function can be generalized to $N \to \infty$ with $\lambda_i > 0$ as a prerequisite.
 
-The mapping $\boldsymbol{\phi}$ is a mapping from input space to the feature space, which is a Hilbert space. \textbf{The kernel function $\mathcal{K}$ can be interpreted as an inner product in the feature space}, i.e. $\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) = \langle \boldsymbol{\phi}(\boldsymbol{x}_i), \boldsymbol{\phi}(\boldsymbol{x}_j) \rangle$.
+$\boldsymbol{\phi}$ is a mapping from input space to the feature space, which is a Hilbert space. \textbf{The kernel function $\mathcal{K}$ can be interpreted as an inner product in the feature space}, i.e. $\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) = \langle \boldsymbol{\phi}(\boldsymbol{x}_i), \boldsymbol{\phi}(\boldsymbol{x}_j) \rangle$.
 The kernel trick is that $\boldsymbol{\phi}$ is never explicitly computed, but from eigendecomposition of $\mathbf{K}$.
+
+\subsection{Mercer kernels examples}
+
+For real-valued inputs $\boldsymbol{x}_i, \boldsymbol{x}_j \in \mathbb{R}^D$, it is common to use stationary kernels, which are functions of the form $\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) = \mathcal{K}(\|\boldsymbol{x}_i - \boldsymbol{x}_j\|)$, i.e. the value depends only on the elementwise distance between the two inputs.
+
+\subsubsection*{Gaussian Kernel}
+Also called the squared exponential kernel, exponentiated quadratic kernel, RBF kernel, defined as
+\[
+\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}')= \exp\left(-\frac{\|\boldsymbol{x} - \boldsymbol{x}'\|^2}{2\ell^2}\right)
+\]
+$\ell$ is the length scale of the kernel, i.e., the distance over which we expect differences to matter. This is known as the bandwidth parameter.
+
+\subsubsection*{ARD Kernel}
+Automatic relevancy determination kernel is a generalization of the Gaussian kernel by replacing Euclidean distance with Mahalanobis distance, defined as
+\[
+\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \sigma^2 \exp \left( -\frac{1}{2} \boldsymbol{r}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{r} \right)
+\]
+
+Typically, $\boldsymbol{\Sigma}$ is a diagonal matrix with $\ell_i^2$ on the diagonal, thus
+\[
+\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \sigma^2 \exp \left( - \sum_{i=1}^D \frac{(x_i - x'_i)^2}{2 \ell_i^2} \right)
+\]
+which allows each input dimension $i$ to have its own characteristic length scale. For high-dimensional inputs where some dimensions may be more relevant than others (eg. $\ell_i = \infty$ makes that dimension been ignored).
+
+\subsection{Combining kernels}
+Multiplying two positive-definite kernels together always results in another positive definite kernel. 
+This is a way to get a conjunction of the individual properties of each kernel.
+\[
+\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = 
+\mathcal{K}_1(\boldsymbol{x}, \boldsymbol{x}') \times \mathcal{K}_2(\boldsymbol{x}, \boldsymbol{x}')
+\]
+Adding two positive-definite kernels together always results in another positive definite kernel. 
+This is a way to get a disjunction of the individual properties of each kernel.
+\[
+\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = 
+\mathcal{K}_1(\boldsymbol{x}, \boldsymbol{x}') + \mathcal{K}_2(\boldsymbol{x}, \boldsymbol{x}')
+\]
+\clearpage
+\section{Gaussian Processes}
+\textbf{Gaussian processes} is a way to define distributions over functions of the form $f: \mathcal{X} \to \mathbb{R}$, where $\mathcal{X}$ is any domain. 
+The key assumption is that the function values at a set of $M > 0$ inputs, $\boldsymbol{f} = [f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_M)]$, is jointly Gaussian, with mean $(\boldsymbol{\mu} = m(\boldsymbol{x}_1), \ldots, m(\boldsymbol{x}_M))$ and covariance $\boldsymbol{\Sigma}_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)$, where $m$ is a mean function and $\mathcal{K}$ is a positive definite (Mercer) kernel. 
+
+Since we assume this holds for any $M > 0$, this includes the case where $M = N+1$, containing $N$ training points $\boldsymbol{x}_n$ and 1 test point $\boldsymbol{x}_*$. 
+Then, $f(\boldsymbol{x}_*)$ can be inferred from knowledge of $f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_n)$ by manipulating the joint Gaussian distribution $p(f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_N), f(\boldsymbol{x}_*))$. Also, extending this to noisy functions of $f(\boldsymbol{x}_n)$ can deal with problemts such as in regression or classification.
+
 
 
 \end{document}
