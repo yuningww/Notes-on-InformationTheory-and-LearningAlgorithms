@@ -763,7 +763,7 @@ In general, the Hessian is positive definite, since $f'(\boldsymbol{w}^\top \bol
 
 Based on these results, gradient-based optimizers can be used to estimate the model weights.
 
-\subsubsection{Stochastic gradient descent}
+\subsubsection*{Stochastic gradient descent}
 
 The goal is to solve
 \[
@@ -1488,8 +1488,104 @@ This is a way to get a disjunction of the individual properties of each kernel.
 The key assumption is that the function values at a set of $M > 0$ inputs, $\boldsymbol{f} = [f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_M)]$, is jointly Gaussian, with mean $(\boldsymbol{\mu} = m(\boldsymbol{x}_1), \ldots, m(\boldsymbol{x}_M))$ and covariance $\boldsymbol{\Sigma}_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)$, where $m$ is a mean function and $\mathcal{K}$ is a positive definite (Mercer) kernel. 
 
 Since we assume this holds for any $M > 0$, this includes the case where $M = N+1$, containing $N$ training points $\boldsymbol{x}_n$ and 1 test point $\boldsymbol{x}_*$. 
-Then, $f(\boldsymbol{x}_*)$ can be inferred from knowledge of $f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_n)$ by manipulating the joint Gaussian distribution $p(f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_N), f(\boldsymbol{x}_*))$. Also, extending this to noisy functions of $f(\boldsymbol{x}_n)$ can deal with problemts such as in regression or classification.
+Then, $f(\boldsymbol{x}_*)$ can be inferred from knowledge of $f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_n)$ by manipulating the joint Gaussian distribution $p(f(\boldsymbol{x}_1), \ldots, f(\boldsymbol{x}_N), f(\boldsymbol{x}_*))$. Also, extending this to noisy functions of $f(\boldsymbol{x}_n)$ can deal with problems such as regression or classification.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/GPdemo.png}
+  \caption{A Gaussian process for 2 training points and 1 test point. The hidden nodes $f_i = f(\boldsymbol{x}_i)$ represent the value of the function at each of the data points.
+  These hidden nodes are fully interconnected with the edge represent the covaiance terms $\Sigma_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)$.
+  If the testing points $\boldsymbol{x}_*$ is close to the training points, then the predicted function value $f(\boldsymbol{x}_*)$ will be similar to the training points $f(\boldsymbol{x}_1)$ and $f(\boldsymbol{x}_2)$.}
+\end{figure}
+
+\subsection{Noise-free observations}
+Suppose we observe a training set $\mathcal{D} = \{(\boldsymbol{x}_n, y_n) : n = 1:N\}$, where $y_n = f(\boldsymbol{x}_n)$ is the noise-free observation of the function evaluated at $\boldsymbol{x}_n$. 
+If we ask the GP to predict $f(\boldsymbol{x})$ for a value of $\boldsymbol{x}$ that it has already seen, we want the GP to return the answer $f(\boldsymbol{x})$ with no uncertainty. 
+
+Now for the case of predicting the outputs for new inputs. 
+Specifically, given a test set $\mathbf{X}_*$ with $N_*$ new data points, we want to predict the function outputs $\boldsymbol{f}_* = [f(\boldsymbol{x}_{*1}), \ldots, f(\boldsymbol{x}_{*N_*})]$. By definition of the GP, the joint distribution $p(\boldsymbol{f}_X, \boldsymbol{f}_* | \mathbf{X}, \mathbf{X}_*)$ has the following form
+\[
+\begin{pmatrix} \boldsymbol{f}_X \\ \boldsymbol{f}_* \end{pmatrix} \sim \mathcal{N} \left( \begin{pmatrix} \boldsymbol{\mu}_X \\ \boldsymbol{\mu}_* \end{pmatrix}, \begin{pmatrix} \mathbf{K}_{X,X} & \mathbf{K}_{X,*} \\ \mathbf{K}_{X,*}^\mathsf{T} & \mathbf{K}_{*,*} \end{pmatrix} \right)
+\]
+where $\boldsymbol{\mu}_X = [m(\boldsymbol{x}_1), \ldots, m(\boldsymbol{x}_N)]$, $\boldsymbol{\mu}_* = [m(\boldsymbol{x}_{*1}), \ldots, m(\boldsymbol{x}_{*N_*})]$, $\mathbf{K}_{X,X} = \mathcal{K}(\mathbf{X}, \mathbf{X})$ is $N \times N$, $\mathbf{K}_{X,*} = \mathcal{K}(\mathbf{X}, \mathbf{X}_*)$ is $N \times N_*$, and $\mathbf{K}_{*,*} = \mathcal{K}(\mathbf{X}_*, \mathbf{X}_*)$ is $N_* \times N_*$. 
+By the standard rules for conditioning Gaussians, the posterior has the following form
+\[
+\begin{aligned}
+p(\boldsymbol{f}_* | \mathbf{X}_*, \mathcal{D}) &= \mathcal{N}(\boldsymbol{f}_* | \boldsymbol{\mu}_{*|X}, \boldsymbol{\Sigma}_{*|X}) \\
+\boldsymbol{\mu}_{*|X} &= \boldsymbol{\mu}_* + \mathbf{K}_{X,*}^\mathsf{T} \mathbf{K}_{X,X}^{-1} (\boldsymbol{f}_X - \boldsymbol{\mu}_X) \\
+\boldsymbol{\Sigma}_{*|X} &= \mathbf{K}_{*,*} - \mathbf{K}_{X,*}^\mathsf{T} \mathbf{K}_{X,X}^{-1} \mathbf{K}_{X,*}
+\end{aligned}
+\]
+
+\subsection{Noisy observations}
+Suppose we observe a training set $\mathcal{D} = \{(\boldsymbol{x}_n, y_n) : n = 1:N\}$, where $y_n = f(\boldsymbol{x}_n) + \epsilon_n$ is the noisy observation of the function evaluated at $\boldsymbol{x}_n$, and $\epsilon_n \sim \mathcal{N}(0, \sigma_y^2)$ is i.i.d. Gaussian noise.
+Consider, the covariance of the observed noisy responses is 
+\[
+\begin{aligned}
+\text{Cov}[y_i, y_j] &= \text{Cov}[f(\boldsymbol{x}_i) + \epsilon_i, f(\boldsymbol{x}_j) + \epsilon_j] \\
+&= \text{Cov}[f(\boldsymbol{x}_i), f(\boldsymbol{x}_j)] + \text{Cov}[\epsilon_i, \epsilon_j] \\
+&= \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) + \sigma_y^2 \delta_{ij}
+\end{aligned}
+\]
+Writing them compactly as,
+\[
+\text{Cov}[\boldsymbol{y} \mid \mathbf{X}] = \mathbf{K}_{X,X} + \sigma_y^2 \mathbf{I}_N \triangleq \mathbf{K}_{\sigma}
+\]
+
+The joint density of the observed data and the latent function on the test points is given by
+\[
+\begin{pmatrix} \boldsymbol{y} \\ \boldsymbol{f}_* \end{pmatrix} \sim \mathcal{N} \left( \begin{pmatrix} \boldsymbol{\mu}_X \\ \boldsymbol{\mu}_* \end{pmatrix}, \begin{pmatrix} \mathbf{K}_{\sigma} & \mathbf{K}_{X,*} \\ \mathbf{K}_{X,*}^\mathsf{T} & \mathbf{K}_{*,*} \end{pmatrix} \right)
+\]
+Therefore, on a set of test points $\mathbf{X}_*$, the posterior predictive distribution is
+\[
+\begin{aligned}
+p(\boldsymbol{f}_* | \mathbf{X}_*, \mathcal{D}) &= \mathcal{N}(\boldsymbol{f}_* | \boldsymbol{\mu}_{*|X}, \boldsymbol{\Sigma}_{*|X}) \\
+\boldsymbol{\mu}_{*|X} &= \boldsymbol{\mu}_* + \mathbf{K}_{X,*}^\mathsf{T} \mathbf{K}_{\sigma}^{-1} (\boldsymbol{f}_X - \boldsymbol{\mu}_X) \\
+\boldsymbol{\Sigma}_{*|X} &= \mathbf{K}_{*,*} - \mathbf{K}_{X,*}^\mathsf{T} \mathbf{K}_{\sigma}^{-1} \mathbf{K}_{X,*}
+\end{aligned}
+\]
+
+\subsection{Bayesian linear regression}
+Bayesian linear regression is a special case of Gaussian processes, and can be viewed in weight space or function space.
+\subsubsection*{Weight space view}
+Consider the linear regression model $y = f(\boldsymbol{x}) + \epsilon$, where $f(\boldsymbol{x}) = \boldsymbol{w}^\mathsf{T} \boldsymbol{\phi}(\boldsymbol{x})$ and $\epsilon \sim \mathcal{N}(0, \sigma_y^2)$. With vectorized form:
+\[
+\boldsymbol{y} = \boldsymbol{\Phi} \boldsymbol{w} + \boldsymbol{\epsilon} \implies p(\boldsymbol{y} | \boldsymbol{w}) = \mathcal{N}(\boldsymbol{y} \mid \boldsymbol{\Phi} \boldsymbol{w}, \sigma_y^2 \mathbf{I})
+\]
+where $\boldsymbol{\Phi}$ is the $N \times D$ design matrix including features of all $N$ training points.
+Assuming a Gaussian prior $p(\boldsymbol{w}) = \mathcal{N}(\boldsymbol{w} | \boldsymbol{0}, \boldsymbol{\Sigma}_w)$, then the posterior is as follows:
+\[
+p(\boldsymbol{w} | \mathcal{D}) = \mathcal{N}\left(\boldsymbol{w} \Big| \frac{1}{\sigma_y^2} \mathbf{A}^{-1} \boldsymbol{\Phi}^T \boldsymbol{y}, \, \mathbf{A}^{-1}\right) \propto p(\boldsymbol{y} | \boldsymbol{w}) p(\boldsymbol{w}) 
+\]
+which is derived by completing the square with $\mathbf{A} = \sigma_y^{-2} \boldsymbol{\Phi}^\mathsf{T} \boldsymbol{\Phi} + \boldsymbol{\Sigma}_w^{-1}$.
+
+The posterior predictive distribution for $f_* = f(\boldsymbol{x}_*) = \boldsymbol{\phi}_*^\mathsf{T} \boldsymbol{w} = \boldsymbol{\phi}(\boldsymbol{x}_*)^\mathsf{T} \boldsymbol{w}$ is therefore
+\[
+p(f_* | \mathcal{D}, \boldsymbol{x}_*) = \mathcal{N}\left(f_* \Big| \frac{1}{\sigma_y^2} \boldsymbol{\phi}_*^\mathsf{T} \mathbf{A}^{-1} \boldsymbol{\Phi}^\mathsf{T} \boldsymbol{y}, \; \boldsymbol{\phi}_*^\mathsf{T} \mathbf{A}^{-1} \boldsymbol{\phi}_*\right)
+\]
+using the standard rules for linear transforms of Gaussians ($\boldsymbol{z} = \boldsymbol{c}^\mathsf{T} \boldsymbol{w} \implies \mathbb{E}[z] = \boldsymbol{c}^\mathsf{T} \boldsymbol{\mu}_w$, $\text{Cov}(z) = \boldsymbol{c}^\mathsf{T} \boldsymbol{\Sigma}_{w} \boldsymbol{c}$).
+
+\subsubsection*{Function space view}
+Bayesian linear regression can be viewed as a GP with a kernel $\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \boldsymbol{\phi}(\boldsymbol{x})^\mathsf{T} \boldsymbol{\Sigma}_w \boldsymbol{\phi}(\boldsymbol{x}')$, which measures the similarity between two inputs $\boldsymbol{x}$ and $\boldsymbol{x}'$ in the feature space defined by $\boldsymbol{\phi}$ and is also a valid
+kernel since covariance $\boldsymbol{\Sigma}_w$ is always positive semi-definite.
+
+Then, defining the following:
+\[
+\mathbf{K} = \boldsymbol{\Phi}^\top \boldsymbol{\Sigma}_w \boldsymbol{\Phi} \in \mathbb{R}^{N \times N}, \quad
+\mathbf{k}_* = \boldsymbol{\Phi}^\top \boldsymbol{\Sigma}_w \boldsymbol{\phi}_* \in \mathbb{R}^{N \times 1}, \quad
+k_{**} = \boldsymbol{\phi}_*^\top \boldsymbol{\Sigma}_w \boldsymbol{\phi}_* \in \mathbb{R}
+\]
+Using these notation, and the matrix inversion lemma, we can rewrite the predictive posterior in the weight space view section as:
+\[
+\begin{aligned}
+p(f_* | \mathcal{D}, \boldsymbol{x}_*) &= \mathcal{N}(f_* | \boldsymbol{\mu}_{*|X}, \boldsymbol{\Sigma}_{*|X}) \\
+\boldsymbol{\mu}_{*|X} &= \boldsymbol{\phi}_*^\mathsf{T} \boldsymbol{\Sigma}_w \boldsymbol{\Phi}^\mathsf{T} (\mathbf{K} + \sigma_y^2 \mathbf{I})^{-1} \boldsymbol{y} = \boldsymbol{k}_*^\mathsf{T} \mathbf{K}_\sigma^{-1} \boldsymbol{y} \\
+\boldsymbol{\Sigma}_{*|X} &= \boldsymbol{\phi}_*^\mathsf{T} \boldsymbol{\Sigma}_w \boldsymbol{\phi}_* - \boldsymbol{\phi}_*^\mathsf{T} \boldsymbol{\Sigma}_w \boldsymbol{\Phi}^\mathsf{T} (\mathbf{K} + \sigma_y^2 \mathbf{I})^{-1} \boldsymbol{\Phi} \boldsymbol{\Sigma}_w \boldsymbol{\phi}_* = k_{**} - \boldsymbol{k}_*^\mathsf{T} \mathbf{K}_\sigma^{-1} \boldsymbol{k}_*
+\end{aligned}
+\]
+which matches the predictive posterior in the GP with noisy observations section with only one testing point $\boldsymbol{x}_*$ instead of $N_*$ testing points $\mathbf{X}_*$.
+
+With kernel trick and a valid kernel $\mathcal{K}$, we can compute the predictive posterior without explicitly computing the feature mapping $\boldsymbol{\phi}$ and allowing for a infinite length feature space.
 
 
 \end{document}
