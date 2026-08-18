@@ -529,13 +529,13 @@ p(\boldsymbol{y}|z=k, \boldsymbol{\theta}) = \prod_{d=1}^{D} \text{Ber}(y_d | \m
 
 A GLM is a conditional version of an exponential family distribution $p(y \mid \theta) = h(y) \exp\left(\theta^\top T(y) - A(\theta)\right)$, in which the natural parameters are a linear function of the input. More precisely, the model has the following form:
 \[
-p(y_n \mid \mathbf{x}_n, \mathbf{w}, \sigma^2)
+p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w}, \sigma^2)
 = \exp\left[\frac{y_n\eta_n - A(\eta_n)}{\sigma^2} + \log h(y_n, \sigma^2)\right]
 \]
 where 
 \begin{itemize}
-    \item $y_n$ is the output/response variable, $\mathbf{x_n}$ is the input/feature vector, $\mathbf{w}$ and $\sigma$ is the learnable model parameter 
-    \item $\eta_n \triangleq \mathbf{w}^{\mathsf{T}}\mathbf{x}_n$ is the (input dependent) natural parameter or canonical parameter
+    \item $y_n$ is the output/response variable, $\boldsymbol{x_n}$ is the input/feature vector, $\boldsymbol{w}$ and $\sigma$ is the learnable model parameter 
+    \item $\eta_n \triangleq \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n$ is the (input dependent) natural parameter or canonical parameter
     \item $A(\eta_n)$ is the log normalizer
     \item $\mathcal{T}(y_n) = y_n$ is the sufficient statistic, which is the smallest summary of the output data $y$ that retains everything relevant for estimating the parameter $\theta$ -- while it may still lose other information about $y$ itself.
     \item $\sigma^2$ is the dispersion term
@@ -553,7 +553,7 @@ To derive the mean, differentiate the equation w.r.t to $\eta_n$
 \[\frac{1}{\sigma^2}\left[\int y_n\, p(y_n\mid\eta_n,\sigma^2)\, dy_n - A'(\eta_n)\right] = 0\]
 thus, the \textbf{mean} is:
 \[
-\mathbb{E}\left[y_n \mid \mathbf{x}_n, \mathbf{w}, \sigma^2\right]
+\mathbb{E}\left[y_n \mid \boldsymbol{x}_n, \boldsymbol{w}, \sigma^2\right]
 = A'(\eta_n) \triangleq \ell^{-1}(\eta_n)
 \]
 where the mapping from the linear inputs to the mean of the output using $\mu_n = \ell^{-1}(\eta_n)$, and the function $\ell$ is known as the link function, and $\ell^{-1}$ is known as the mean function. 
@@ -566,7 +566,7 @@ To derive the variance, differentiate the above equation w.r.t $\eta_n$ again,
 \]
 thus, the \textbf{variance} is:
 \[
-\mathbb{V}\left[y_n \mid \mathbf{x}_n, \mathbf{w}, \sigma^2\right]
+\mathbb{V}\left[y_n \mid \boldsymbol{x}_n, \boldsymbol{w}, \sigma^2\right]
 = A''(\eta_n)\sigma^2
 \]
 
@@ -574,22 +574,22 @@ thus, the \textbf{variance} is:
 
 Binary logistic regression is used when $y_n \in \{0,1\}$. It has the form
 \[
-p(y_n \mid \mathbf{x}_n, \mathbf{w})
+p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w})
 = \mu_n^{y_n}(1-\mu_n)^{1-y_n}
 \]
 where
 \[
 \mu_n = \sigma(\eta_n) = \frac{1}{1 + \exp(-\eta_n)}, \quad
-\eta_n = \mathbf{w}^{\mathsf{T}}\mathbf{x}_n.
+\eta_n = \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n.
 \]
 Hence
 \[
-\log p(y_n \mid \mathbf{x}_n, \mathbf{w})
+\log p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w})
 = y_n\log \mu_n + (1-y_n)\log(1-\mu_n)
 \]
 Using $\mu_n = \exp(\eta_n)/(1+\exp(\eta_n))$, in GLM form:
 \[
-\log p(y_n \mid \mathbf{x}_n, \mathbf{w})
+\log p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w})
 = y_n\eta_n - \log(1 + \exp(\eta_n))
 \]
 We see that $A(\eta_n) = \log(1 + \exp(\eta_n))$ and hence
@@ -602,38 +602,38 @@ Thus the link function is the logit function, $\ell(\mu_n) = \log\left(\frac{\mu
 
 Linear regression has the form with $y_n \in \mathbb{R}$
 \[
-p(y_n \mid \mathbf{x}_n, \mathbf{w}, \sigma^2)
+p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w}, \sigma^2)
 = \frac{1}{\sqrt{2\pi\sigma^2}}
-\exp\left(-\frac{1}{2\sigma^2}(y_n - \mathbf{w}^{\mathsf{T}}\mathbf{x}_n)^2\right)
+\exp\left(-\frac{1}{2\sigma^2}(y_n - \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n)^2\right)
 \]
 Hence
 \[
-\log p(y_n \mid \mathbf{x}_n, \mathbf{w}, \sigma^2)
+\log p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w}, \sigma^2)
 = -\frac{1}{2\sigma^2}(y_n - \eta_n)^2 - \frac{1}{2}\log(2\pi\sigma^2)
 \]
-where $\eta_n = \mathbf{w}^{\mathsf{T}}\mathbf{x}_n$. In GLM form:
+where $\eta_n = \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n$. In GLM form:
 \[
-\log p(y_n \mid \mathbf{x}_n, \mathbf{w}, \sigma^2)
+\log p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w}, \sigma^2)
 = \frac{y_n\eta_n - \frac{\eta_n^2}{2}}{\sigma^2}
 - \frac{1}{2}\left(\frac{y_n^2}{\sigma^2} + \log(2\pi\sigma^2)\right)
 \]
 We see that $A(\eta_n) = \eta_n^2/2$ and hence
 \[
-\mathbb{E}[y_n] = \eta_n = \mathbf{w}^{\mathsf{T}}\mathbf{x}_n,\quad \mathbb{V}[y_n] = \sigma^2 
+\mathbb{E}[y_n] = \eta_n = \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n,\quad \mathbb{V}[y_n] = \sigma^2 
 \]
 
 \subsection{Binomial regression}
 
 If the response variable is the number of successes in $N_n$ trials, $y_n \in \{0,\ldots,N_n\}$, we can use binomial regression, which is defined by
 \[
-p(y_n \mid \mathbf{x}_n, N_n, \mathbf{w})
-= \operatorname{Bin}(y_n \mid \sigma(\mathbf{w}^{\mathsf{T}}\mathbf{x}_n), N_n)
+p(y_n \mid \boldsymbol{x}_n, N_n, \boldsymbol{w})
+= \operatorname{Bin}(y_n \mid \sigma(\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n), N_n)
 \]
 note that binary logistic regression is the special case when $N_n = 1$. 
 
 The log pdf is given by
 \[
-\log p(y_n \mid \mathbf{x}_n, N_n, \mathbf{w})
+\log p(y_n \mid \boldsymbol{x}_n, N_n, \boldsymbol{w})
 = y_n\log \mu_n + (N_n-y_n)\log(1-\mu_n) + \log \binom{N_n}{y_n}
 \]
 \[
@@ -643,13 +643,13 @@ The log pdf is given by
 where $\mu_n = \sigma(\eta_n)$. To rewrite this in GLM form, let us define
 \[
 \eta_n \triangleq \log\left(\frac{\mu_n}{1-\mu_n}\right)
-= \log\left[\frac{1}{1+e^{-\mathbf{w}^{\mathsf{T}}\mathbf{x}_n}}\frac{1+e^{-\mathbf{w}^{\mathsf{T}}\mathbf{x}_n}}{e^{-\mathbf{w}^{\mathsf{T}}\mathbf{x}_n}}\right]
-= \log\left(\frac{1}{e^{-\mathbf{w}^{\mathsf{T}}\mathbf{x}_n}}\right)
-= \mathbf{w}^{\mathsf{T}}\mathbf{x}_n
+= \log\left[\frac{1}{1+e^{-\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n}}\frac{1+e^{-\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n}}{e^{-\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n}}\right]
+= \log\left(\frac{1}{e^{-\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n}}\right)
+= \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n
 \]
 Hence we can write binomial regression in GLM form as follows:
 \[
-\log p(y_n \mid \mathbf{x}_n, N_n, \mathbf{w})
+\log p(y_n \mid \boldsymbol{x}_n, N_n, \boldsymbol{w})
 = y_n\eta_n - A(\eta_n) + h(y_n)
 \]
 where
@@ -666,8 +666,8 @@ Hence,
 
 If the response variable is an integer count, $y_n \in \{0,1,\ldots\}$, we can use Poisson regression, which is defined by
 \[
-p(y_n \mid \mathbf{x}_n, \mathbf{w})
-= \operatorname{Poi}(y_n \mid \exp(\mathbf{w}^{\mathsf{T}}\mathbf{x}_n))
+p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w})
+= \operatorname{Poi}(y_n \mid \exp(\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n))
 \]
 where
 \[
@@ -677,15 +677,15 @@ is the Poisson distribution.
 
 The log pdf is given by
 \[
-\log p(y_n \mid \mathbf{x}_n, \mathbf{w})
+\log p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w})
 = y_n\log \mu_n - \mu_n - \log(y_n!)
 \]
-where $\mu_n = \exp(\mathbf{w}^{\mathsf{T}}\mathbf{x}_n)$. Hence in GLM form we have
+where $\mu_n = \exp(\boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n)$. Hence in GLM form we have
 \[
-\log p(y_n \mid \mathbf{x}_n, \mathbf{w})
+\log p(y_n \mid \boldsymbol{x}_n, \boldsymbol{w})
 = y_n\eta_n - A(\eta_n) + h(y_n)
 \]
-where $\eta_n = \log(\mu_n) = \mathbf{w}^{\mathsf{T}}\mathbf{x}_n$, $A(\eta_n) = \mu_n = e^{\eta_n}$, and $h(y_n) = -\log(y_n!)$. Hence
+where $\eta_n = \log(\mu_n) = \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n$, $A(\eta_n) = \mu_n = e^{\eta_n}$, and $h(y_n) = -\log(y_n!)$. Hence
 \[
 \mathbb{E}[y_n] = \frac{dA}{d\eta_n} = e^{\eta_n} = \mu_n, \quad
 \mathbb{V}[y_n] = \frac{d^2A}{d\eta_n^2} = e^{\eta_n} = \mu_n
@@ -731,29 +731,29 @@ Examples of links:
 
 GLMs can be fit the negative log-likelihood as the objective function (ignoring constant term $h$):
 \[
-\operatorname{NLL}(\mathbf{w})
-= -\log p(\mathcal{D} \mid \mathbf{w})
+\operatorname{NLL}(\boldsymbol{w})
+= -\log p(\mathcal{D} \mid \boldsymbol{w})
 = -\frac{1}{\sigma^2}\sum_{n=1}^{N}\ell_n 
 = -\frac{1}{\sigma^2}\sum_{n=1}^{N}[\eta_n y_n - A(\eta_n)]
 \]
-where $\eta_n = \mathbf{w}^{\mathsf{T}}\mathbf{x}_n$. 
+where $\eta_n = \boldsymbol{w}^{\mathsf{T}}\boldsymbol{x}_n$. 
 
-To find the MLE, we must solve $\nabla \text{NNL}(\mathbf{w}) = \mathbf{g(w)} = 0$. For notational simplicity, we will assume $\sigma^2 = 1$. The gradient for a single term is:
+To find the MLE, we must solve $\nabla \text{NNL}(\boldsymbol{w}) = \boldsymbol{g(w)} = 0$. For notational simplicity, we will assume $\sigma^2 = 1$. The gradient for a single term is:
 \[
 \begin{aligned}
-\mathbf{g}_n &= 
--\frac{1}{\sigma^2}\frac{\partial \ell_n}{\partial \mathbf{w}}
-=-\frac{1}{\sigma^2} \frac{\partial \ell_n}{\partial \eta_n}\frac{\partial \eta_n}{\partial \mathbf{w}} \\
-&=-\frac{1}{\sigma^2} \left(y_n - A'(\eta_n)\right)\mathbf{x}_n
-=-\frac{1}{\sigma^2} (y_n - \mu_n)\mathbf{x}_n
+\boldsymbol{g}_n &= 
+-\frac{1}{\sigma^2}\frac{\partial \ell_n}{\partial \boldsymbol{w}}
+=-\frac{1}{\sigma^2} \frac{\partial \ell_n}{\partial \eta_n}\frac{\partial \eta_n}{\partial \boldsymbol{w}} \\
+&=-\frac{1}{\sigma^2} \left(y_n - A'(\eta_n)\right)\boldsymbol{x}_n
+=-\frac{1}{\sigma^2} (y_n - \mu_n)\boldsymbol{x}_n
 \end{aligned}
 \]
-where $\mu_n = f(\mathbf{w^{\mathsf{T}} x})$, and $f$ is the inverse link function that maps from canonical parameters to mean parameters. If we interpret $(y_n - \mu_n)$ as an error signal, then the gradient $-\frac{1}{\sigma^2}\sum_{n=1}^{N}(y_n - \mu_n)\mathbf{x}_n$ weights each input $\mathbf{x}_n$ by its error, and averages the result.
+where $\mu_n = f(\boldsymbol{w^{\mathsf{T}} x})$, and $f$ is the inverse link function that maps from canonical parameters to mean parameters. If we interpret $(y_n - \mu_n)$ as an error signal, then the gradient $-\frac{1}{\sigma^2}\sum_{n=1}^{N}(y_n - \mu_n)\boldsymbol{x}_n$ weights each input $\boldsymbol{x}_n$ by its error, and averages the result.
 
-Gradient-based optimization will find a stationary points where $\mathbf{g(w)} = 0$, we need to examine the Hessian matrix to determine whether it is the global optimum. The Hessian is given by 
+Gradient-based optimization will find a stationary points where $\boldsymbol{g(w)} = 0$, we need to examine the Hessian matrix to determine whether it is the global optimum. The Hessian is given by 
 \[
 \begin{aligned}
-\mathbf{H} &= \frac{\partial^2}{\partial \boldsymbol{w}\partial \boldsymbol{w}^\top}\text{NLL}(\boldsymbol{w}) \\ 
+\boldsymbol{H} &= \frac{\partial^2}{\partial \boldsymbol{w}\partial \boldsymbol{w}^\top}\text{NLL}(\boldsymbol{w}) \\ 
 &= -\sum_{n=1}^N \frac{\partial \boldsymbol{g}_n}{\partial \boldsymbol{w}^\top}
 = -\sum_{n=1}^N \frac{\partial \boldsymbol{g}_n}{\partial \mu_n}\frac{\partial \mu_n}{\partial \boldsymbol{w}^\top}
 = -\sum_{n=1}^N \boldsymbol{x}_n f'(\boldsymbol{w}^\top \boldsymbol{x}_n)\boldsymbol{x}_n^\top
@@ -767,13 +767,13 @@ Based on these results, gradient-based optimizers can be used to estimate the mo
 
 The goal is to solve
 \[
-\hat{\boldsymbol{w}} \triangleq \operatorname*{argmin}_{\boldsymbol{w}} \mathcal{L}(\boldsymbol{w}) = \operatorname*{argmin}_{\boldsymbol{w}} \text{NLL}({\mathbf{w}})
+\hat{\boldsymbol{w}} \triangleq \operatorname*{argmin}_{\boldsymbol{w}} \mathcal{L}(\boldsymbol{w}) = \operatorname*{argmin}_{\boldsymbol{w}} \text{NLL}({\boldsymbol{w}})
 \]
 One of the methods is stochastic gradient descent: we use a minibatch from the whole dataset of size $N$, then we get the following update equation:
 \[
-\mathbf{w}_{t+1}
-= \mathbf{w}_t - \alpha_t \nabla_{\mathbf{w}}\operatorname{NLL}(\mathbf{w}_t)
-= \mathbf{w}_t - \alpha_t(\mu_n - y_n)\mathbf{x}_n
+\boldsymbol{w}_{t+1}
+= \boldsymbol{w}_t - \alpha_t \nabla_{\boldsymbol{w}}\operatorname{NLL}(\boldsymbol{w}_t)
+= \boldsymbol{w}_t - \alpha_t(\mu_n - y_n)\boldsymbol{x}_n
 \]
 where we replaced the average over all $N$ samples with a stochastically chosen minibatch size at each step $t$.
 
@@ -1547,13 +1547,17 @@ p(\boldsymbol{f}_* | \mathbf{X}_*, \mathcal{D}) &= \mathcal{N}(\boldsymbol{f}_* 
 
 \subsection{Bayesian linear regression}
 Bayesian linear regression is a special case of Gaussian processes, and can be viewed in weight space or function space.
+In the following example, lets consider the case where we have $N$ training points $\mathcal{D} = \{ (\boldsymbol{x}_n, \boldsymbol{y}_n) : n = 1 : N \}$ and $1$ testing points $\boldsymbol{x}_*$.
+
 \subsubsection*{Weight space view}
 Consider the linear regression model $y = f(\boldsymbol{x}) + \epsilon$, where $f(\boldsymbol{x}) = \boldsymbol{w}^\mathsf{T} \boldsymbol{\phi}(\boldsymbol{x})$ and $\epsilon \sim \mathcal{N}(0, \sigma_y^2)$. With vectorized form:
 \[
 \boldsymbol{y} = \boldsymbol{\Phi} \boldsymbol{w} + \boldsymbol{\epsilon} \implies p(\boldsymbol{y} | \boldsymbol{w}) = \mathcal{N}(\boldsymbol{y} \mid \boldsymbol{\Phi} \boldsymbol{w}, \sigma_y^2 \mathbf{I})
 \]
 where $\boldsymbol{\Phi}$ is the $N \times D$ design matrix including features of all $N$ training points.
-Assuming a Gaussian prior $p(\boldsymbol{w}) = \mathcal{N}(\boldsymbol{w} | \boldsymbol{0}, \boldsymbol{\Sigma}_w)$, then the posterior is as follows:
+Plain linear regression stops by maximizing this w.r.t. $\boldsymbol{w}$, but the Bayesian pushes this forward.
+
+Assuming a Gaussian prior $p(\boldsymbol{w}) = \mathcal{N}(\boldsymbol{w} | \boldsymbol{0}, \boldsymbol{\Sigma}_w)$ on the model parameter $\boldsymbol{w} \in \mathbb{R}^{D \times 1}$, then the posterior is as follows:
 \[
 p(\boldsymbol{w} | \mathcal{D}) = \mathcal{N}\left(\boldsymbol{w} \Big| \frac{1}{\sigma_y^2} \mathbf{A}^{-1} \boldsymbol{\Phi}^T \boldsymbol{y}, \, \mathbf{A}^{-1}\right) \propto p(\boldsymbol{y} | \boldsymbol{w}) p(\boldsymbol{w}) 
 \]
@@ -1569,12 +1573,13 @@ using the standard rules for linear transforms of Gaussians ($\boldsymbol{z} = \
 Bayesian linear regression can be viewed as a GP with a kernel $\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \boldsymbol{\phi}(\boldsymbol{x})^\mathsf{T} \boldsymbol{\Sigma}_w \boldsymbol{\phi}(\boldsymbol{x}')$, which measures the similarity between two inputs $\boldsymbol{x}$ and $\boldsymbol{x}'$ in the feature space defined by $\boldsymbol{\phi}$ and is also a valid
 kernel since covariance $\boldsymbol{\Sigma}_w$ is always positive semi-definite.
 
-Then, defining the following:
+Then, defining the training-training, training-test, and test-test covariance:
 \[
 \mathbf{K} = \boldsymbol{\Phi}^\top \boldsymbol{\Sigma}_w \boldsymbol{\Phi} \in \mathbb{R}^{N \times N}, \quad
 \mathbf{k}_* = \boldsymbol{\Phi}^\top \boldsymbol{\Sigma}_w \boldsymbol{\phi}_* \in \mathbb{R}^{N \times 1}, \quad
 k_{**} = \boldsymbol{\phi}_*^\top \boldsymbol{\Sigma}_w \boldsymbol{\phi}_* \in \mathbb{R}
 \]
+where $\boldsymbol{\phi}_*$ is a $D \times 1$ is the feature vector of the single test point.
 Using these notation, and the matrix inversion lemma, we can rewrite the predictive posterior in the weight space view section as:
 \[
 \begin{aligned}
@@ -1586,6 +1591,37 @@ p(f_* | \mathcal{D}, \boldsymbol{x}_*) &= \mathcal{N}(f_* | \boldsymbol{\mu}_{*|
 which matches the predictive posterior in the GP with noisy observations section with only one testing point $\boldsymbol{x}_*$ instead of $N_*$ testing points $\mathbf{X}_*$.
 
 With kernel trick and a valid kernel $\mathcal{K}$, we can compute the predictive posterior without explicitly computing the feature mapping $\boldsymbol{\phi}$ and allowing for a infinite length feature space.
+
+
+\subsection{Estimating the kernel}
+Most kernels have some free parameters, which can have a large effect on the predictions from the model.
+To estimate the kernel parameters $\boldsymbol{\theta}$ (i.e. hyperparameters), we could use exhaustive search over a discrete grid of values,
+with validation loss as an objective, but this can be quite slow.
+
+\subsubsection*{Empirical Bayes}
+Consider an empirical Bayes approach, which allows the use of gradient-based optimization methods, which are much faster. In particular, we will maximize the marginal likelihood
+\[
+p(\boldsymbol{y}|\boldsymbol{X}, \boldsymbol{\theta}) = \int p(\boldsymbol{y}|\boldsymbol{f}, \boldsymbol{X}) p(\boldsymbol{f}|\boldsymbol{X}, \boldsymbol{\theta}) d\boldsymbol{f}
+\]
+The latent Gaussian vector $\boldsymbol{f}$ have been marginalized out, so this is called the marginal likelihood rather than likelihood.
+
+Recall that the prior $p(\boldsymbol{f} | \boldsymbol{X}) = \mathcal{N}(\boldsymbol{f} | \boldsymbol{0}, \boldsymbol{K}_{X,X})$ and the likelihood $p(\boldsymbol{y} | \boldsymbol{f}) = \mathcal{N}(\boldsymbol{y} | \boldsymbol{f}, \sigma_y^2 \mathbf{I}_N)$, in which we assume the mean function is 0, then the marginal likelihood is given by
+\[
+\log p(\boldsymbol{y} | \mathbf{X}, \boldsymbol{\theta}) = \log \mathcal{N}(\boldsymbol{y} | \boldsymbol{0}, \mathbf{K}_\sigma) = -\frac{1}{2} \boldsymbol{y}^\mathsf{T} \mathbf{K}_\sigma^{-1} \boldsymbol{y} - \frac{1}{2} \log |\mathbf{K}_\sigma| - \frac{N}{2} \log(2\pi)
+\]
+where the dependence of $\mathbf{K}_\sigma = \mathbf{K}_{X,X} + \sigma_y^2 \mathbf{I}_N$ on $\boldsymbol{\theta}$ is implicit.
+The first term is a data fit term, the second term is a model complexity term, and the third term is a constant.
+There is a tradeoff between the first and the second term.
+
+To maximize the marginal likelihood,
+\[
+\begin{aligned}
+\frac{\partial}{\partial \theta_j} \log p(\boldsymbol{y} | \mathbf{X}, \boldsymbol{\theta}) &= \frac{1}{2} \boldsymbol{y}^\mathsf{T} \mathbf{K}_\sigma^{-1} \frac{\partial \mathbf{K}_\sigma}{\partial \theta_j} \mathbf{K}_\sigma^{-1} \boldsymbol{y} - \frac{1}{2} \text{tr}\left(\mathbf{K}_\sigma^{-1} \frac{\partial \mathbf{K}_\sigma}{\partial \theta_j}\right) \\
+&= \frac{1}{2} \text{tr}\left( (\boldsymbol{\alpha}\boldsymbol{\alpha}^\mathsf{T} - \mathbf{K}_\sigma^{-1}) \frac{\partial \mathbf{K}_\sigma}{\partial \theta_j} \right)
+\end{aligned}
+\]
+where $\boldsymbol{\alpha} = \mathbf{K}_\sigma^{-1} \boldsymbol{y}$. It takes $O(N^3)$ time to compute $\mathbf{K}_\sigma^{-1}$, and then $O(N^2)$ time per hyper-parameter to compute the gradient.
+Therefore, we can estimate the kernel parameters using any standard gradient-based optimizer. However, since the objective is not convex, local minima can be a problem, so multiple restarts might be used.
 
 
 \end{document}
