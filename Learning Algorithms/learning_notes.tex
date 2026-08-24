@@ -222,7 +222,7 @@ The interpretation is as follows: in the generative story ($\boldsymbol{z} \righ
 While the prior and likelihood are specified by the modeler, the posterior is determined by the data $\boldsymbol{y}$ through the Bayes rule.
 
 \clearpage
-\section{Maximum Likelihood Estimation}
+\section{Statistics and Estimation}
 The process of estimating model parameters $\boldsymbol{\theta}$ from data $\mathcal{D}$ is called \textbf{model fitting}, or training, and is at the heart of machine learning.
 The key optimization problem is,
 \[
@@ -230,6 +230,7 @@ The key optimization problem is,
 \]
 where $\mathcal{L}(\boldsymbol{\theta})$ is some kind of loss function or objective function.
 
+\subsection{Maximum Likelihood Estimation}
 The most common approach to parameter estimation is to pick the parameters that assign the highest
 probability to the training data, called \textbf{maximum likelihood estimation} or \textbf{MLE}.
 \[
@@ -265,6 +266,37 @@ If we define $q(Y \mid \boldsymbol{x})$ denotes the model's predictive distribut
 \end{aligned}
 \]
 Minimizing the expected KL divergence is equivalent to minimizing the conditional NLL.
+
+\subsection{Empirical Risk Minimization}
+MLE can be generalized by replacing the (conditional) log loss term, $\ell(\boldsymbol{y}_n, f(\boldsymbol{x}_n ; \boldsymbol{\theta})) = -\log p(\boldsymbol{y}_n | \boldsymbol{x}_n, \boldsymbol{\theta})$, with any other loss function, to get
+\[
+\hat{\boldsymbol{\theta}}_{erm} = \operatorname*{argmin}_{\boldsymbol{\theta}} \mathcal{L}(\boldsymbol{\theta}) = \operatorname*{argmin}_{\boldsymbol{\theta}} \frac{1}{N} \sum_{n=1}^{N} \ell(\boldsymbol{y}_n, f(\boldsymbol{x}_n ; \boldsymbol{\theta}))
+\]
+This is \textbf{empirical risk minimization} or \textbf{ERM}, where the loss $\ell$ can be set manually either probabilistic or non-probabilistic.
+
+\subsection{Regularization}
+Overfitting may happen with the use of MLE or ERM, as they will try to pick parameters that minimize loss on the training set, but this may not result in a model that has low loss on unseen data.
+This is called \textbf{overfitting}.
+
+The main solution to overfitting is to use \textbf{regularization} by adding a penalty term. Thus,
+\[
+\mathcal{L}(\boldsymbol{\theta}; \lambda) = \left[ \frac{1}{N} \sum_{n=1}^{N} \ell(\boldsymbol{y}_n, \boldsymbol{\theta}; \boldsymbol{x}_n) \right] + \lambda C(\boldsymbol{\theta})
+\]
+where $\lambda \geq 0$ is the \textbf{regularization parameter}, and $C(\boldsymbol{\theta})$ is some form of \textbf{complexity penalty}.
+
+A common complexity penalty is to use $C(\boldsymbol{\theta}) = -\log p(\boldsymbol{\theta})$, where $p(\boldsymbol{\theta})$ is the \textbf{prior} for $\boldsymbol{\theta}$. If $\ell$ is the log loss, the regularized objective becomes
+\[
+\mathcal{L}(\boldsymbol{\theta}; \lambda) = -\frac{1}{N} \sum_{n=1}^{N} \log p(\boldsymbol{y}_n | \boldsymbol{x}_n, \boldsymbol{\theta}) - \lambda \log p(\boldsymbol{\theta})
+\]
+By setting $\lambda = 1$ and rescaling $p(\boldsymbol{\theta})$ appropriately, we can equivalently minimize the following:
+\[
+\mathcal{L}(\boldsymbol{\theta}; \lambda) = -\left[ \sum_{n=1}^{N} \log p(\boldsymbol{y}_n | \boldsymbol{x}_n, \boldsymbol{\theta}) + \log p(\boldsymbol{\theta}) \right] = -\left[ \log p(\mathcal{D} | \boldsymbol{\theta}) + \log p(\boldsymbol{\theta}) \right]
+\]
+Minimizing this is equivalent to maximizing the log posterior:
+\[
+\hat{\boldsymbol{\theta}} = \operatorname*{argmax}_{\boldsymbol{\theta}} \log p(\boldsymbol{\theta} | \mathcal{D}) = \operatorname*{argmax}_{\boldsymbol{\theta}} \left[ \log p(\mathcal{D} | \boldsymbol{\theta}) + \log p(\boldsymbol{\theta}) - \text{const} \right]
+\]
+This is known as \textbf{MAP estimation} or \textbf{maximum a posterior estimation}.
 
 \clearpage
 \section{Matrix Calculus}

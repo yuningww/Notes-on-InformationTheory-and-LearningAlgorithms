@@ -44,7 +44,7 @@
 
 \begin{quote}
 {\Large
-  "Almost all codes are good codes, except those we can think of."
+  ``Almost all codes are good codes, except those we can think of. ''
 }
 \end{quote}
 
@@ -150,9 +150,134 @@ To determine whether a subset $H$ of a group G with an operation $\ast$ is a sub
 
 It is clear that, if $a = e$ is the identity element of $G$, then $e \ast H = H \ast e = H$, and so $H$ is also considered as a coset of itself. If $G$ is a commutative group, then the left coset $a \ast H$ and the right coset $H \ast a$ are identical, i.e., $a \ast H = H \ast a$ for any $a \in G$.
 
-
-
 \subsection{Fields}
+\begin{definition}
+Let F be \textbf{a set of elements on which two binary operations}, called \textbf{addition} $+$ and \textbf{multiplication} $\cdot$ are defined. 
+F is a field under these two operations, addition and multiplication, if the following conditions are satisfied.
+\begin{enumerate}
+  \item F is a commutative group under addition +. The identity element with respect to addition $+$ is called the zero element (or additive identity) of F and is denoted by 0.
+  \item The set F $\setminus \{ 0 \}$ of nonzero elements of F forms a commutative group under multiplication $\cdot$. The identity element with respect to multiplication $\cdot$ is called the unit element (or multiplicative identity) of F and is denoted by 1.
+  \item For any three elements $a$, $b$, and $c$ in F,
+  \[
+  a \cdot (b + c) = a \cdot b + a \cdot c
+  \]
+  which is the distributive law (i.e. multiplication is distributive over addition)
+\end{enumerate}
+\end{definition}
+
+From the definition, a field consists of two groups with respect to two operations, addition and multiplication. The group with respect to addition is called the additive group of the field, and the group with respect to multiplication is called the multiplicative group of the field. 
+Since each group must contain an identity element, a field must contain at least two elements (a field with two elements does exist). 
+In a field, the additive inverse of an element $a$ is denoted by $-a$, and the multiplicative inverse of $a$ is denoted by $a^{−1}$, provided that $a \neq 0$.
+From the additive and multiplicative inverses of elements of a field, two other operations, namely subtraction $-$ and division $\div$, can be defined.
+\[
+a - b \triangleq a + (-b) \quad \text{and} \quad a \div b \triangleq a \cdot (b^{-1})
+\]
+
+A field is an algebraic system in which we can perform addition, subtraction, multiplication, and division without leaving the field.
+
+Thus, some properties of a field $F$,
+\begin{enumerate}
+\item For every element $a$ in $F$, $ a \cdot 0 = 0 \cdot a = 0$.
+\item For any two nonzero elements $a$ and $b$ in $F$, $a \cdots b \neq 0 $.
+\item For two elements $a$ and $b$ in $F$ , $a \cdot b = 0$ implies that either $a = 0$ or $b = 0$.
+\item For any two elements $a$ and $b$ in $F$, $-(a \cdot b) = (-a) \cdot b = a \cdot (-b)$.
+\item For $a \neq 0$, $a \cdot b = a \cdot c$ implies that $b = c$.
+\end{enumerate}
+
+
+\begin{definition}
+  The number of elements in a field is called the order of the field. A field with finite order is called a finite field.
+\end{definition}
+
+\begin{definition}
+ Let F be a field. A subset K of F that is itself a field under the operations of F is called a subfield of F . In this context, F is called an extension field of K.
+ If K $\neq$ F , K is a proper subfield of F. A field containing no proper subfields is called a prime field.
+\end{definition}
+
+The rational-number field is a proper subfield of the real-number field, and the real-number field is a proper subfield of the complex-number field. 
+The rational-number field is a prime field. The real- and complex-number fields are extension fields of the rational-number field.
+
+\begin{definition}
+  Let F be a field and 1 be its unit element (or multiplicative identity). The characteristic of F is defined as the smallest positive integer $\lambda$ such that
+  \[
+  \sum_{i=1}^\lambda = \underbrace{1 + 1 + \cdots + 1}_\lambda = 0
+  \]
+  where the summation represents repeated applications of addition $+$ of the field. If no such $\lambda$ exists, F is said to have zero characteristic, i.e., $\lambda = 0$, and F is an infinite field.
+\end{definition}
+
+\begin{theorem}
+The characteristic $\lambda$ of a finite field is a prime.
+\end{theorem}
+\begin{proof}
+Suppose that $\lambda$ is not a prime. Then, $\lambda$ can be factored as a product of two smaller positive integers, say $k$ and $l$, with $1 < k$, $l<\lambda$. Then $\lambda = kl$. It follows from the distributive law that
+\[
+\sum_{i=1}^\lambda = \left( \sum_{i=1}^k \right) \cdot \left( \sum_{i=1}^l \right) = 0
+\]
+Thus, either $\sum_{i=1}^k = 0$ or $\sum_{i=1}^l = 0$. 
+Since $1 < k$, $l<\lambda$, either $\sum_{i=1}^k = 0$ or $\sum_{i=1}^l = 0$ contradicts the definition that $\lambda$ is the smallest positive integer such that $\sum_{i=1}^\lambda = 0$.
+Therefore, $\lambda$ must be prime.
+\end{proof}
+
+\subsubsection{Finite fields}
+Finite fields are also called Galois fields.
+
+Let $p$ be a prime number. The set of integers $\{ 0, 1, \cdots, p-1 \}$ forms a commutative group under modulo-$p$ addition $\boxplus$.
+The set of integers $\{ 1, \cdots, p-1 \}$ forms a commutative group under modulo-$p$ multiplication $\boxdot$.
+Also, the modulo-$p$ multiplication is distributive over modulo-$p$ addition.
+Therefore, the set of integers $\{ 0, 1, \cdots, p-1 \}$ forms a finite field GF($p$) of order $p$ under modulo-$p$ addition and multiplication, where 0 and 1 are the zero and unit elements of the field, respectively.
+The following sums of the unit element 1 give all the elements of the field:
+\[
+1,\quad \sum_{i = 1}^2 = 2,\quad \sum_{i = 1}^3 = 3,\quad \cdots ,\quad \sum_{i = 1}^{p-1} = p - 1,\quad \sum_{i = 1}^p = 0
+\]
+
+After showing that, for every prime number $p$, there exists a prime field GF($p$). 
+For any positive integer $m$, it is possible to construct a Galois field GF($p^m$) with $p^m$ elements based on the prime field GF($p$).
+The Galois field GF($p^m$) contains GF($p$) as a subfield and is an extension field of GF($p$). A very important feature of a finite field is that its order must be a power of a prime. That is to say that the order of any finite field is a power of a prime.
+
+\begin{definition}
+Let $a$ be a nonzero element of a finite field GF($q$). The smallest positive integer $n$ such that $a^n = 1$ is called the order of the nonzero field element $a$.
+\end{definition}
+
+\begin{theorem}
+Let $a$ be a nonzero element of order $n$ in a finite field GF($q$). Then the powers of $a$,
+\[
+a^n = 1, \, a, \, a^2, \, \cdots, \, a^{n-1}
+\]
+form a cyclic subgroup of the multiplicative group of GF($q$).
+\end{theorem}
+
+\begin{theorem}
+Let $a$ be a nonzero element of a finite field GF($q$). Then $a^{q-1} =1$. 
+\end{theorem}
+
+\begin{theorem}
+Let $n$ be the order of a nonzero element $a$ in GF($q$). Then $q-1$ is divisible by $n$.
+\end{theorem}
+
+\begin{definition}
+A nonzero element $a$ of a finite field GF($q$) is called a primitive element if its order is $q - 1$. That is, $a^{q-1} = 1, a, a^2, \cdots,a^{q-2}$ form all the nonzero elements of GF($q$).
+\end{definition}
+
+Every finite field has at least one primitive element. Con- sider the prime field GF(5) under modulo-5 addition and multiplication.
+The integer 2 is a primitive element of GF(5),
+\[
+2^1 = 2, \, 2^2 = 2 \boxdot 2 = 4, \, 2^3 = 2^2 \boxdot 2 = 4 \boxdot 2 = 3,
+\]
+\[
+2^4 = 2^3 \boxdot 2 = 3 \boxdot 2 = 1
+\]
+The integer 3 is also a primitive element of GF(5),
+\[
+3^1 = 3, \, 3^2 = 3 \boxdot 3 = 4, \, 3^3 = 3^2 \boxdot 3 = 4 \boxdot 3 = 2,
+\]
+\[
+3^4 = 3^3 \boxdot 3 = 2 \boxdot 3 = 1
+\]
+However, the integer 4 is not a primitive element and its order is 2
+\[
+4^1 = 4, \, 4^2 = 4 \boxdot 4 = 1
+\]
+
 
 
 \clearpage
