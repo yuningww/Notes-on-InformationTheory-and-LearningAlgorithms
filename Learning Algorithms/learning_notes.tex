@@ -1530,6 +1530,21 @@ Then, $f(\boldsymbol{x}_*)$ can be inferred from knowledge of $f(\boldsymbol{x}_
   If the testing points $\boldsymbol{x}_*$ is close to the training points, then the predicted function value $f(\boldsymbol{x}_*)$ will be similar to the training points $f(\boldsymbol{x}_1)$ and $f(\boldsymbol{x}_2)$.}
 \end{figure}
 
+Compactly, the Gaussian Process defined over a function $f$ is:
+\[
+f \sim \mathcal{GP}(m, \mathcal{K})
+\]
+where $f$, $m$ are $\mathcal{X} \to \mathbb{R}$ functions and $\mathcal{K}$ is a $\mathcal{X} \times \mathcal{X} \to \mathbb{R}$ function.
+Then, for the $N$ training points $\boldsymbol{x}_n$ plus one test point $\boldsymbol{x}_*$ case,
+\[
+\begin{pmatrix} f(\mathbf{x}_1) \\ \vdots \\ f(\mathbf{x}_N) \\ f(\mathbf{x}_*) \end{pmatrix}
+\sim \mathcal{N} \left(
+\begin{pmatrix} m(\mathbf{x}_1) \\ \vdots \\ m(\mathbf{x}_N) \\ m(\mathbf{x}_*) \end{pmatrix},
+\begin{pmatrix} \mathbf{K} & \mathbf{k}_* \\ \mathbf{k}_*^\mathsf{T} & K(\mathbf{x}_*, \mathbf{x}_*) \end{pmatrix}
+\right)
+\]
+
+
 \subsection{Noise-free observations}
 Suppose we observe a training set $\mathcal{D} = \{(\boldsymbol{x}_n, y_n) : n = 1:N\}$, where $y_n = f(\boldsymbol{x}_n)$ is the noise-free observation of the function evaluated at $\boldsymbol{x}_n$. 
 If we ask the GP to predict $f(\boldsymbol{x})$ for a value of $\boldsymbol{x}$ that it has already seen, we want the GP to return the answer $f(\boldsymbol{x})$ with no uncertainty. 
@@ -1631,7 +1646,13 @@ To estimate the kernel parameters $\boldsymbol{\theta}$ (i.e. hyperparameters), 
 with validation loss as an objective, but this can be quite slow.
 
 \subsubsection*{Empirical Bayes}
-Consider an empirical Bayes approach, which allows the use of gradient-based optimization methods, which are much faster. In particular, we will maximize the marginal likelihood
+For a fully Bayes approach, the kernel hyperparameter $\boldsymbol{\theta}$ is a random variable as well, then
+\[
+p(\boldsymbol{y}|\boldsymbol{X}) = \int \int p(\boldsymbol{y}|\boldsymbol{f}, \boldsymbol{X}) p(\boldsymbol{f}|\boldsymbol{X}, \boldsymbol{\theta})p(\boldsymbol{\theta}) d\boldsymbol{f} d\boldsymbol{\theta}
+\]
+But this double integral is typically untractable, MCMC or other approximate inference should be used.
+
+Consider an empirical Bayes approach by treating $\boldsymbol{\theta}$ as a fixed but unknown constant, which allows the use of gradient-based optimization methods, which are much faster. In particular, we will maximize the marginal likelihood
 \[
 p(\boldsymbol{y}|\boldsymbol{X}, \boldsymbol{\theta}) = \int p(\boldsymbol{y}|\boldsymbol{f}, \boldsymbol{X}) p(\boldsymbol{f}|\boldsymbol{X}, \boldsymbol{\theta}) d\boldsymbol{f}
 \]
@@ -1654,6 +1675,145 @@ To maximize the marginal likelihood,
 \]
 where $\boldsymbol{\alpha} = \mathbf{K}_\sigma^{-1} \boldsymbol{y}$. It takes $O(N^3)$ time to compute $\mathbf{K}_\sigma^{-1}$, and then $O(N^2)$ time per hyper-parameter to compute the gradient.
 Therefore, we can estimate the kernel parameters using any standard gradient-based optimizer. However, since the objective is not convex, local minima can be a problem, so multiple restarts might be used.
+
+\subsection{GP for classifications}
+So far, the focus is on GP for regressions with Gaussian likelihoods (eg. $p(\boldsymbol{y}|\boldsymbol{f}) = \mathcal{N}(\boldsymbol{y} \mid \boldsymbol{f}, \sigma_y^2 \mathbf{I} )$).
+In this case, the posterior is also a GP, and all computation can be performed analytically.
+However, if the likelihood is non-Gaussian, such as the Bernoulli likelihood for binary classification, the posterior doesn't have a closed form.
+
+To make classfication inference, the predictive distribution on test data $\boldsymbol{x}_\ast$ is required,
+\[
+p(f_* \mid \mathcal{D}, \boldsymbol{x}_*) = \int p(f_* \mid \boldsymbol{f}, \boldsymbol{\theta}, \boldsymbol{x}_*) p(\boldsymbol{f}, \boldsymbol{\theta} \mid \mathbf{X}, \boldsymbol{y}) \, d\boldsymbol{f} \, d\boldsymbol{\theta}
+\]
+Expanding the posterior distribution term, 
+\[
+\begin{aligned}
+\log (p(\boldsymbol{f}, \boldsymbol{\theta} \mid \mathbf{X}, \boldsymbol{y}))
+&= \log p(\boldsymbol{y} \mid \boldsymbol{f}) + \log p(\boldsymbol{f} \mid \mathbf{X}) + \log p(\boldsymbol{\theta}) - \log p(\boldsymbol{y} \mid \mathbf{X}) \\
+&= \underbrace{\log \mathcal{N}(\boldsymbol{f} \mid \boldsymbol{0}, \mathbf{K}(\mathbf{X},\mathbf{X})) + \sum_{n=1}^N \log \text{Ber}(y_n \mid f_n(\boldsymbol{x}_n)) + \log p(\boldsymbol{\theta})}_{-\mathcal{E}(\boldsymbol{f}, \boldsymbol{\theta}) \text{, which has closed form}} - \underbrace{\log p(\boldsymbol{y} \mid \mathbf{X})}_{\text{no closed form}}
+\end{aligned}
+\]
+Thus, via autograd, $\nabla_{\boldsymbol{f}} \mathcal{E}(\boldsymbol{f}, \boldsymbol{\theta})$ and $\nabla_{\boldsymbol{\theta}} \mathcal{E}(\boldsymbol{f}, \boldsymbol{\theta})$
+can be calculated, and use these gradients to perform Hamiltonian Monte Carlo simulations to approximate the posterior $p(\boldsymbol{f}, \boldsymbol{\theta} \mid \mathbf{X}, \boldsymbol{y}) = p(\boldsymbol{f}, \boldsymbol{\theta} \mid \mathcal{D})$.
+
+Intuitively, HMC use $\nabla_{\boldsymbol{f}, \boldsymbol{\theta}} \mathcal{E}(\boldsymbol{f}, \boldsymbol{\theta})$ to simulate a physical particle moving through the $(\boldsymbol{f}, \boldsymbol{\theta})$ landscape defined by $-\mathcal{E}$, using gradients to guide it toward high-probability regions.
+Recording the particle's positions over time yields samples $\{ (\boldsymbol{f}^{(s)}, \boldsymbol{\theta}^{(s)})\}_{s=1}^S$.
+Then, the intractable predictive distribution can be approximated by averaging over the $S$ samples:
+\[
+p(f_* \mid \mathcal{D}, \boldsymbol{x}_*) \approx \frac{1}{S} \sum_{s=1}^{S} p(f_* \mid \boldsymbol{f}^{(s)}, \boldsymbol{\theta}^{(s)}, \boldsymbol{x}_*)
+\]
+where each term in the sum is just a noisy-free observations, which can be calculated analytically using Gaussian conditioning formulas.
+
+\subsection{GP and deep learning}
+There are many connections and similarities between GPs and deep neural networks.
+
+Consider a neural network with a single layer of $J$ RBF units, i.e. the output of this layer in terms of the input vector $\boldsymbol{x}$ is
+\[
+f(\boldsymbol{x}) = \sum_{j=1}^J v_j \boldsymbol{\phi}_j (\boldsymbol{x}) \in \mathbb{R}, \quad \boldsymbol{\phi}_j (\boldsymbol{x}) = \boldsymbol{\phi}(\boldsymbol{x}; \boldsymbol{u}_j) = \exp\left(-\frac{\|\boldsymbol{x} - \boldsymbol{u}_j \|^2}{2\ell^2}\right)
+\]
+where $v_j \overset{iid}{\sim} \mathcal{N}(0, \sigma_v^2)$ and $\boldsymbol{u}_j \overset{iid}{\sim} p(\boldsymbol{u})$ are the output weights and RBF centers for each neuron. Therefore,
+\[
+\mathbb{E}[f(\boldsymbol{x})] = \sum_j \mathbb{E}[v_j] \, \mathbb{E}[\boldsymbol{\phi}(\boldsymbol{x}; \boldsymbol{u}_j)] = 0
+\]
+\[
+\text{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')] = \sum_{j,k} \mathbb{E}[v_j v_k] \, \mathbb{E}[\boldsymbol{\phi}_j(\boldsymbol{x}) \boldsymbol{\phi}_k(\boldsymbol{x}')] = \sigma_v^2 \sum_{j=1}^{J} \mathbb{E}_{\boldsymbol{u}}[\boldsymbol{\phi}(\boldsymbol{x}; \boldsymbol{u}) \boldsymbol{\phi}(\boldsymbol{x}'; \boldsymbol{u})]
+\]
+(cross terms vanish since $\mathbb{E}[v_j v_k] = 0$ for $j \neq k$). Rescale $\sigma_v^2 = \omega^2 / J$,
+\[
+\text{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')] = \omega^2 \, \mathbb{E}_{\boldsymbol{u}} \left[ \boldsymbol{\phi}(\boldsymbol{x}; \boldsymbol{u}) \boldsymbol{\phi}(\boldsymbol{x}'; \boldsymbol{u}) \right] = \omega^2 \int \boldsymbol{\phi}(\boldsymbol{x}; \boldsymbol{u}) \, \boldsymbol{\phi}(\boldsymbol{x}'; \boldsymbol{u}) \, p(\boldsymbol{u}) \, d\boldsymbol{u}
+\]
+which is an integral (weighted by $p(\boldsymbol{u})$) over a continuous index $\boldsymbol{u}$ of the feature space $\boldsymbol{\phi}$. This makes it into a valid kernel.
+
+For any finite set of test points $\{ \boldsymbol{x}_1, \cdots, \boldsymbol{x}_M \}$, define a random vector $\boldsymbol{f}$ such that it is a sum of $J$ random vectors,
+\[
+\boldsymbol{f} = [f(\boldsymbol{x}_1), \cdots,  f(\boldsymbol{x}_M)] = \sum_{j=1}^J v_j [\boldsymbol{\phi}_j(\boldsymbol{x}_1), \cdots, \boldsymbol{\phi}_j(\boldsymbol{x}_M)]
+\]
+with mean is $\boldsymbol{0}$ and covariance $\omega^2 \, \mathbb{E}_{\boldsymbol{u}} \left[ \boldsymbol{\phi}(\boldsymbol{x}_i; \boldsymbol{u}) \boldsymbol{\phi}(\boldsymbol{x}_j; \boldsymbol{u}) \right]$ for any entry $(i,j)$.
+By the Central Limit Theorem, as $J \to \infty$ this sum converges to an exact multivariate Gaussian with the same mean and covariance.
+By assuming $p(\boldsymbol{u}) \sim \mathcal{N}(\boldsymbol{0}, s^2\mathbf{I})$ with $s \to \infty$ (i.e. uninformative prior on the RBF centers), the integral can be expressed as,
+\[
+\text{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')] = \mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \omega^2 C \exp \left( -\frac{\|\boldsymbol{x} - \boldsymbol{x}' \|^2}{4\ell^2} \right)
+\]
+where $C$ is a normalizing constant. Therefore, we see that a neural network with a single, infinitely wide
+layer of RBF units is equivalent to a GP with an RBF kernel.
+
+\subsection{GP for dimensionality reduction}
+Gaussian Process Factor Analysis (GPFA) is an useful tool for reducing dimensionality of a time series data.
+Recall that:
+
+Factor Analysis (FA) models a collection of high-dimensional observations as noisy linear combinations of a small number of shared latent factors. For a single observation $\mathbf{y}_t \in \mathbb{R}^q$,
+\[
+    \mathbf{y}_t = \mathbf{W} \mathbf{x}_t + \boldsymbol{\mu} + \boldsymbol{\epsilon}_t, \qquad \boldsymbol{\epsilon}_t \sim \mathcal{N}(\mathbf{0}, \boldsymbol{\Psi}),
+\]
+where
+\begin{itemize}
+    \item $\mathbf{x}_t \in \mathbb{R}^p$ is the latent factor vector, $p \ll q$, with $x_i(t)$ denotes the $i$th component in $\mathbf{x}_t$
+    \item $\mathbf{W} \in \mathbb{R}^{q \times p}$ is the factor loading matrix, $\boldsymbol{\mu} \in \mathbb{R}^q$ is a mean offset,
+    \item $\boldsymbol{\Psi} \in \mathbb{R}^{q \times q}$ is a diagonal covariance matrix, so that any correlation among the observed dimensions of $\mathbf{y}_t$ is explained entirely through the shared latents $\mathbf{x}_t$, not through correlated noise.
+\end{itemize}
+The defining assumption of FA is that the latents are drawn independently and identically at each observation,
+\[
+    \mathbf{x}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{I}_p), \qquad \text{i.i.d. across } t.
+\]
+Ordinary FA has no notion of correlation between observations: permuting the index $t$ does not change the model or its likelihood.
+
+A Gaussian Process (GP) is a distribution over functions, fully specified by a mean function $m(t)$ and a covariance (kernel) function $k(t,t')$:
+\[
+    f(t) \sim \mathcal{GP}\big(m(t), \mathcal{K}(t,t')\big).
+\]
+For any finite collection of input points $\{ t_i \}_{i=1}^T$, the corresponding function values are jointly Gaussian,
+\[
+    \big(f(t_1), \dots, f(t_T)\big) \sim \mathcal{N}(\mathbf{m}, \mathbf{K}), \qquad
+    \mathbf{m}_i = m(t_i), \quad \mathbf{K}_{ij} = \mathcal{K}(t_i, t_j).
+\]
+Commonly, the squared-exponential (RBF) kernel is used throughout GPFA,
+\[
+    k(t,t') = \sigma^2 \exp\!\left(-\frac{(t-t')^2}{2\tau^2}\right),
+\]
+where $\sigma^2$ sets the marginal variance and $\tau$ is a characteristic timescale: pairs of points with $|t - t'| \ll \tau$ are nearly perfectly correlated (enforcing smoothness), while pairs with $|t-t'| \gg \tau$ are nearly independent.
+
+\subsection*{The GPFA Model}
+
+GPFA combines the observation model of FA with a GP prior over each latent dimension in place of the i.i.d.\ Gaussian prior. Concretely, for a sequence of observations $\mathbf{y}(t_1), \dots, \mathbf{y}(t_T)$ at times $t_1, \dots, t_T$,
+\[
+\begin{aligned}
+\mathbf{y}(t) &= \mathbf{W} \mathbf{x}(t) + \boldsymbol{\mu} + \boldsymbol{\epsilon}(t), \qquad \boldsymbol{\epsilon}(t) \sim \mathcal{N}(\mathbf{0}, \boldsymbol{\Psi}) \\
+x_i(t) &\sim \mathcal{GP}\big(0, \mathcal{K}_i(t,t')\big), \qquad i = 1, \dots, p
+\end{aligned}
+\]
+with the following features:
+\begin{itemize}
+    \item Each latent dimension $i$ has its own kernel $\mathcal{K}_i(t,t')$ (typically RBF), with its own timescale $\tau_i$ and variance $\sigma_i^2$, allowing different latents to evolve at different characteristic speeds.
+    \item The $p$ latent GPs are assumed independent.
+    \item $\mathbf{W}$, $\boldsymbol{\mu}$, and $\boldsymbol{\Psi}$ (diagonal) play exactly the same role as in standard FA.
+\end{itemize}
+The only change relative to FA is thus replacing the independent-across-time prior on $\mathbf{x}_t$ with a temporally correlated GP prior on each $x_i(t)$.
+
+Fixing the $T$ observation times $t_1,\dots,t_T$ of a trial, stack the latent values for dimension $i$ into $\mathbf{x}_i = \big(x_i(t_1), \dots, x_i(t_T)\big)^\top \in \mathbb{R}^T$. By the GP marginalization property,
+\[
+    \mathbf{x}_i \sim \mathcal{N}(\mathbf{0}, \mathbf{K}_i), \qquad [\mathbf{K}_i]_{ab} = \mathcal{K}_i(t_a, t_b).
+\]
+Concatenating all $p$ latent trajectories into a single vector $\mathbf{x} = (\mathbf{x}_1^\top, \dots, \mathbf{x}_p^\top)^\top \in \mathbb{R}^{pT}$, and using the independence across latent dimensions,
+\[
+    \mathbf{x} \sim \mathcal{N}(\mathbf{0}, \tilde{\mathbf{K}}), \qquad \tilde{K} = \mathrm{blkdiag}(\mathbf{K}_1, \dots, \mathbf{K}_p) \in \mathbb{R}^{pT \times pT}
+\]
+Similarly stacking the observations across time, $\mathbf{y} = \big(\mathbf{y}(t_1)^\top, \dots, \mathbf{y}(t_T)^\top\big)^\top \in \mathbb{R}^{qT}$, the linear-Gaussian observation model can be written compactly as
+\[
+    \mathbf{y} = \tilde{\mathbf{W}}\, \mathbf{x} + \tilde{\boldsymbol{\mu}} + \boldsymbol{\epsilon}, \qquad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \tilde{\boldsymbol{\Psi}}),
+\]
+where $\tilde{\mathbf{W}}$ places a copy of $\mathbf{W}$ (suitably permuted to match the stacking of $\mathbf{x}$) at each time block, $\tilde{\boldsymbol{\mu}}$ repeats $\boldsymbol{\mu}$ across the $T$ blocks, and $\tilde{\boldsymbol{\Psi}} = I_T \otimes \boldsymbol{\Psi}$. 
+
+Because both the prior $p(\mathbf{x})$ and the observation model are linear-Gaussian, $\mathbf{y}$ and $\mathbf{x}$ are jointly Gaussian, and the posterior $p(\mathbf{x} \mid \mathbf{y})$ is again Gaussian with closed-form mean and covariance obtained via the standard Gaussian conditioning formulas.
+\[
+p(\mathbf{x} \mid \mathbf{y}) = \mathcal{N}\Big(\mathbf{x} \ \Big|\ \tilde{\mathbf{K}}\tilde{\mathbf{W}}^\top \tilde{\mathbf{Q}}^{-1}(\mathbf{y}-\tilde{\boldsymbol{\mu}}),\ \ \tilde{\mathbf{K}} - \tilde{\mathbf{K}}\tilde{\mathbf{W}}^\top\tilde{\mathbf{Q}}^{-1}\tilde{\mathbf{W}}\tilde{\mathbf{K}}\Big), \qquad \tilde{\mathbf{Q}} = \tilde{\mathbf{W}}\tilde{\mathbf{K}}\tilde{\mathbf{W}}^\top + \tilde{\boldsymbol{\Psi}}
+\]
+
+GPFA parameters $\theta = \{\mathbf{W}, \boldsymbol{\mu}, \boldsymbol{\Psi}, \{\sigma_i^2, \tau_i\}_{i=1}^p\}$ are typically fit by Expectation-Maximization, mirroring FA but with two changes:
+
+\begin{description}
+    \item[E-step.] Given current $\theta$, compute the posterior mean and covariance of $p(\mathbf{x} \mid \mathbf{y})$. This step performs GP regression across all $p$ latents and $T$ time points jointly, rather than the simple pointwise Gaussian conditioning used in ordinary FA's E-step.
+    \item[M-step.] Update $\mathbf{W}$, $\boldsymbol{\mu}$, $\boldsymbol{\Psi}$ in closed form same as in FA. The GP kernel hyperparameters $\{\sigma_i^2, \tau_i\}$ do not have closed-form updates and are instead optimized numerically (e.g., by gradient ascent on the expected complete-data log-likelihood).
+\end{description}
 
 
 \end{document}
