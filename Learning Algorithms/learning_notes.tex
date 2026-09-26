@@ -805,11 +805,459 @@ One of the methods is stochastic gradient descent: we use a minibatch from the w
 \[
 \boldsymbol{w}_{t+1}
 = \boldsymbol{w}_t - \alpha_t \nabla_{\boldsymbol{w}}\operatorname{NLL}(\boldsymbol{w}_t)
-= \boldsymbol{w}_t - \alpha_t(\mu_n - y_n)\boldsymbol{x}_n
+= \boldsymbol{w}_t - \alpha_t \frac{N}{B}\sum_{i=1}^{B} (\mu_i - y_i)\boldsymbol{x}_i
 \]
-where we replaced the average over all $N$ samples with a stochastically chosen minibatch size at each step $t$.
+where we replaced the average over all $N$ samples with a stochastically chosen minibatch of size $B$ at each step $t$.
 
-Since we know the objective is convex, then it can be shown that this will converge to a global optimum given the learning rate $\alpha_t$ is decayed appropriately at each step $t$.
+Since the objective is convex, then it can be shown that this will converge to a global optimum given the learning rate $\alpha_t$ is decayed appropriately at each step $t$.
+
+\clearpage
+\section{Deep Neural Networks}
+
+Recall some linear models for classification and regression:
+\begin{itemize}
+    \item Binary logistic regression: $p(y | \boldsymbol{x}, \boldsymbol{w}) = \text{Ber}(y | \sigma(\boldsymbol{w}^\top \boldsymbol{x}))$
+    \item Multi-class logistic regression: $p(y | \boldsymbol{x}, \boldsymbol{W}) = \text{Cat}(y | \text{softmax}(\mathbf{W}^\top \boldsymbol{x}))$
+    \item Linear regression: $p(y | \boldsymbol{x}, \boldsymbol{w}, \sigma^2) = \mathcal{N}(y \mid \boldsymbol{w}^\top \boldsymbol{x}, \sigma^2)$
+    \item Generalized linear models: generalized to various output distributions in the exponential family.
+\end{itemize}
+
+To increase the flexibility of such models is to perform a feature transformation, i.e. replacing $\boldsymbol{x}$ with $\boldsymbol{\phi}(\boldsymbol{x})$.
+Thus, the model becomes $f(\boldsymbol{x};\boldsymbol{\theta}) = \mathbf{W} \boldsymbol{\phi}(\boldsymbol{x}) + \boldsymbol{b}$ with $\boldsymbol{\theta} = (\mathbf{W}, \boldsymbol{b})$.
+Then, we can give the feature extractor $\boldsymbol{\phi}$ with its own parameter $\boldsymbol{\theta}_2$, to get $f(\boldsymbol{x};\boldsymbol{\theta}) = \mathbf{W} \boldsymbol{\phi}(\boldsymbol{x};\boldsymbol{\theta}_2) + \boldsymbol{b}$ with $\boldsymbol{\theta} = (\mathbf{W}, \boldsymbol{b}, \boldsymbol{\theta}_2)$.
+This can be done recursively, to create more and more complex functions:
+\[
+f(\boldsymbol{x};\boldsymbol{\theta}) = f_L(f_{L-1}(\ldots f_2(f_1(\boldsymbol{x};\boldsymbol{\theta}_1);\boldsymbol{\theta}_2)\ldots;\boldsymbol{\theta}_{L-1});\boldsymbol{\theta}_L)
+\]
+where $f_\ell$ is the $\ell$-th layer of the network, and $\boldsymbol{\theta}_\ell$ are the parameters of that layer. This is known as a \textbf{multilayer perceptron (MLP)} or a \textbf{feedforward neural network}.
+
+An MLP assumes that the input layer is a fixed dimension vector, say $\boldsymbol{x} \in \mathbb{R}^D$, and the data is often stored in an $N \times D$ design matrix (i.e. structured data).
+There are other types of neural networks that can handle "unstructured" data, such as convolutional neural networks (CNNs) for images, recurrent neural networks (RNNs) for sequences, and graph neural networks (GNNs) for graphs.
+
+\subsection{Multilayer perceptrons}
+
+A traditional definition of a perceptron is a deterministic version of logistic regression,
+\[
+f(\boldsymbol{x}; \boldsymbol{\theta}) = \mathbb{I}(\boldsymbol{w}^\top \boldsymbol{x} + b > 0)
+\]
+which is essentially a heaviside step function or a linear threshold function.
+However, the decision boundaries represented by perceptrons are linear, so they are very limited in what they can represent.
+Also, the heaviside step function is not differentiable, so it is hard to train.
+
+These problems can be solved by,
+\begin{enumerate}
+    \item Stacking multiple perceptrons on top of each other, forming a multilayer perceptrons (MLPs). Therefore, we are using a hidden layer of perceptrons to produce a nonlinear decision boundary.
+    \item Replacing the heaviside step function $\mathbb{R} \to \{0,1\}$ with a differentiable \textbf{activation function} $\varphi: \, \mathbb{R} \to \mathbb{R}$.
+    Defining the hidden units $\boldsymbol{z}_l$ at each layer $l$ to be a linear transformation of $\boldsymbol{z}_{l-1}$ passed elementwise through this activation function,
+    \[
+    \boldsymbol{z}_l = f_l(\boldsymbol{z}_{l-1}) = \varphi(\mathbf{W}_l \boldsymbol{z}_{l-1} + \boldsymbol{b}_l)
+    \]
+    where the quantity that is passed to the activation function is called the pre-activations.
+\end{enumerate}
+The term “MLP” almost always refers to this differentiable model, rather than the historical version with non-differentiable heaviside.
+
+\subsubsection*{Activation functions}
+Any differentiable function can be used as an activation function. However, if a linear function $\varphi(a) = c_l a$ is used, the whole model reduces to a linear model.
+
+Three types of common activation functions are:
+\begin{itemize}
+    \item Sigmoid, which is a smooth approximation to the heaviside step function:
+    \[
+    \sigma(a) = \frac{1}{1 + e^{-a}}
+    \]
+    $\sigma(a)$ saturates at 1 for large positive inputs, and at 0 for large negative inputs.
+    \item Tanh:
+    \[
+    \tanh(a) = \frac{e^{-a} - e^{a}}{e^{-a} + e^{a}}
+    \]
+    $\tanh(a)$ saturates at 1 for large positive inputs, and at -1 for large negative inputs.
+    \item ReLU: 
+    \[
+    \text{ReLU}(a) = \max(0,a) = a \mathbb{I}(a > 0)
+    \]
+    ReLU is a non-saturating activation function, which are able to propagate gradients from higher layers to lower layers more effectively.
+\end{itemize}
+
+\subsubsection*{Network depth}
+It can be shown that an MLP with one hidden layer is a universal function approximator, meaning it can model any suitably smooth function, given enough hidden units, to any desired level of accuracy.
+However, deep networks work better than shallow ones. The reason is that later layers can leverage the features that are learned by earlier layers; 
+that is, the function is defined in a compositional or hierarchical way.
+
+\subsection{Backpropagation}
+Backpropagation is an algorithm to compute the gradient of the loss function applied to the output of the network wrt the parameters in each layer.
+This gradient can then be passed to a gradient-based optimization algorithm to train the network.
+
+\subsubsection{Backpropagation for MLPs}
+MLPs are a simple kind of DNN in which each layer feeds directly into the next, forming a chain
+structure. Consider a mapping $\boldsymbol{o} = \boldsymbol{f}(\boldsymbol{x})$ where $\boldsymbol{o} \in \mathbb{R}^m$ and $\boldsymbol{x} \in \mathbb{R}^n$.
+Assuming $\boldsymbol{f}$ is defined as a composition of functions,
+\[
+\boldsymbol{f} = \boldsymbol{f}_4 \circ \boldsymbol{f}_3 \circ \boldsymbol{f}_2 \circ \boldsymbol{f}_1
+\]
+where $\boldsymbol{f}_1 : \mathbb{R}^n \to \mathbb{R}^{m_1}$, $\boldsymbol{f}_2 : \mathbb{R}^{m_1} \to \mathbb{R}^{m_2}$, $\boldsymbol{f}_3 : \mathbb{R}^{m_2} \to \mathbb{R}^{m_3}$, and $\boldsymbol{f}_4 : \mathbb{R}^{m_3} \to \mathbb{R}^m$.
+The intermediate steps to compute $\boldsymbol{o} = \boldsymbol{f}(\boldsymbol{x})$ are $\boldsymbol{x}_2 = \boldsymbol{f}_1(\boldsymbol{x})$, $\boldsymbol{x}_3 = \boldsymbol{f}_2(\boldsymbol{x}_2)$, $\boldsymbol{x}_4 = \boldsymbol{f}_3(\boldsymbol{x}_3)$, and $\boldsymbol{o} = \boldsymbol{f}_4(\boldsymbol{x}_4)$.
+
+To compute the Jacobian $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) = \frac{\partial \boldsymbol{o}}{\partial \boldsymbol{x}} \in \mathbb{R}^{m \times n}$ using the chain rule:
+\[
+\frac{\partial \boldsymbol{o}}{\partial \boldsymbol{x}} = \frac{\partial \boldsymbol{o}}{\partial \boldsymbol{x}_4} \frac{\partial \boldsymbol{x}_4}{\partial \boldsymbol{x}_3} \frac{\partial \boldsymbol{x}_3}{\partial \boldsymbol{x}_2} \frac{\partial \boldsymbol{x}_2}{\partial \boldsymbol{x}} = \frac{\partial \boldsymbol{f}_4(\boldsymbol{x}_4)}{\partial \boldsymbol{x}_4} \frac{\partial \boldsymbol{f}_3(\boldsymbol{x}_3)}{\partial \boldsymbol{x}_3} \frac{\partial \boldsymbol{f}_2(\boldsymbol{x}_2)}{\partial \boldsymbol{x}_2} \frac{\partial \boldsymbol{f}_1(\boldsymbol{x})}{\partial \boldsymbol{x}}
+\]
+\[
+= \mathbf{J}_{\boldsymbol{f}_4}(\boldsymbol{x}_4) \mathbf{J}_{\boldsymbol{f}_3}(\boldsymbol{x}_3) \mathbf{J}_{\boldsymbol{f}_2}(\boldsymbol{x}_2) \mathbf{J}_{\boldsymbol{f}_1}(\boldsymbol{x})
+\]
+To compute the Jacobian $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})$ efficiently, recall that
+\[
+\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) = \frac{\partial \boldsymbol{f}(\boldsymbol{x})}{\partial \boldsymbol{x}} = \begin{pmatrix} \dfrac{\partial f_1}{\partial x_1} & \cdots & \dfrac{\partial f_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \dfrac{\partial f_m}{\partial x_1} & \cdots & \dfrac{\partial f_m}{\partial x_n} \end{pmatrix} = \begin{pmatrix} \nabla f_1(\boldsymbol{x})^\mathsf{T} \\ \vdots \\ \nabla f_m(\boldsymbol{x})^\mathsf{T} \end{pmatrix} = \left( \frac{\partial \boldsymbol{f}}{\partial x_1}, \cdots, \frac{\partial \boldsymbol{f}}{\partial x_n} \right) \in \mathbb{R}^{m \times n}
+\]
+where $\nabla f_i(\boldsymbol{x})^\mathsf{T} \in \mathbb{R}^{1 \times n}$ is the $i$'th row (for $i = 1:m$) and $\frac{\partial \boldsymbol{f}}{\partial x_j} \in \mathbb{R}^m$ is the $j$'th column (for $j = 1:n$). Note that, in our notation, when $m = 1$, the gradient, denoted $\nabla \boldsymbol{f}(\boldsymbol{x})$, has the same shape as $\boldsymbol{x}$. It is therefore a column vector, while $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})$ is a row vector. In this case, we therefore technically have $\nabla \boldsymbol{f}(\boldsymbol{x}) = \mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})^\mathsf{T}$.
+
+To extract individual columns or rows of the Jacobian,
+\begin{itemize}
+    \item Extracting the $i$'th row of $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})$ by using a vector Jacobian Product (VJP),
+    \[
+    \boldsymbol{e}_i^\top \mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}), \, \text{where} \, \boldsymbol{e}_i \in \mathbb{R}^m \, \text{is the $i$'th unit basis vector}
+    \]
+    If $n > m$, it is more efficient to compute $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})$ for each row $i = 1 : m$ by using VJPs in a left-to-right manner,
+    \[
+    \boldsymbol{u}^\mathsf{T} \mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) = \underbrace{\boldsymbol{u}^\mathsf{T}}_{1 \times m} \underbrace{\mathbf{J}_{\boldsymbol{f}_4}(\boldsymbol{x}_4)}_{m \times m_3} \underbrace{\mathbf{J}_{\boldsymbol{f}_3}(\boldsymbol{x}_3)}_{m_3 \times m_2} \underbrace{\mathbf{J}_{\boldsymbol{f}_2}(\boldsymbol{x}_2)}_{m_2 \times m_1} \underbrace{\mathbf{J}_{\boldsymbol{f}_1}(\boldsymbol{x}_1)}_{m_1 \times n}
+    \]
+    This can be done using reverse mode differentiation.
+
+    \item Extracting the $j$'th column of $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})$ by using a Jacobian vector Product (JVP),
+    \[
+    \mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) \boldsymbol{e}_j, \, \text{where} \, \boldsymbol{e}_j \in \mathbb{R}^n \, \text{is the $j$'th unit basis vector}
+    \]
+    If $m > n$, it is more efficient to compute $\mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x})$ for each column $j = 1 : n$ by using JVPs in a right-to-left manner,
+    \[
+    \mathbf{J}_{\boldsymbol{f}}(\boldsymbol{x}) \boldsymbol{v} = \underbrace{\mathbf{J}_{\boldsymbol{f}_4}(\boldsymbol{x}_4)}_{m \times m_3} \underbrace{\mathbf{J}_{\boldsymbol{f}_3}(\boldsymbol{x}_3)}_{m_3 \times m_2} \underbrace{\mathbf{J}_{\boldsymbol{f}_2}(\boldsymbol{x}_2)}_{m_2 \times m_1} \underbrace{\mathbf{J}_{\boldsymbol{f}_1}(\boldsymbol{x}_1)}_{m_1 \times n} \underbrace{\boldsymbol{v}}_{n \times 1}
+    \]      
+    This can be done using forward mode differentiation.
+\end{itemize}
+
+\subsubsection{Reverse mode differentiation and VJPs with learnable parameters}
+Assuming the four layer MLP structure for analysis (without loss of generality), but each layer can have (optional) learnable parameters $\boldsymbol{\theta}_\ell$ for $\ell = 1:4$.
+Assuming the case where the mapping has the form $\mathcal{L}: \mathbb{R}^n \to \mathbb{R}$ (i.e. output is a scalar). For example, consider the loss for a MLP with one hidden layer:
+\[
+\mathcal{L}((\boldsymbol{x},\boldsymbol{y}), \boldsymbol{\theta}) = \frac{1}{2} \|\boldsymbol{y} - \mathbf{W}_2 \varphi(\mathbf{W}_1 \boldsymbol{x}) \|^2
+\]
+which can be represented as a feedforward model,
+\[
+\begin{aligned}
+&\mathcal{L} = \boldsymbol{f}_4 \circ \boldsymbol{f}_3 \circ \boldsymbol{f}_2 \circ \boldsymbol{f}_1 \\
+&\boldsymbol{x}_2 = \boldsymbol{f}_1(\boldsymbol{x}, \boldsymbol{\theta}_1) = \mathbf{W}_1 \boldsymbol{x} \\
+&\boldsymbol{x}_3 = \boldsymbol{f}_2(\boldsymbol{x}_2, \emptyset) = \varphi(\boldsymbol{x}_2) \\
+&\boldsymbol{x}_4 = \boldsymbol{f}_3(\boldsymbol{x}_3, \boldsymbol{\theta}_3) = \mathbf{W}_2 \boldsymbol{x}_3 \\
+&\mathcal{L} = \boldsymbol{f}_4(\boldsymbol{x}_4, \boldsymbol{y}) = \frac{1}{2} \|\boldsymbol{y} - \boldsymbol{x}_4\|^2
+\end{aligned}
+\]
+the notation $\boldsymbol{f}_k(\boldsymbol{x}_k, \boldsymbol{\theta}_k)$ denotes the function at layer $k$ with input $\boldsymbol{x}_k$ and learnable parameters $\boldsymbol{\theta}_k$. 
+The loss function $\mathcal{L}$ is a function of the input $\boldsymbol{x}$, the target $\boldsymbol{y}$, and the learnable parameters $\boldsymbol{\theta} = (\boldsymbol{\theta}_1, \boldsymbol{\theta}_2 = \emptyset, \boldsymbol{\theta}_3)$.
+
+Chain rule can be used to compute the gradient of the scalar output wrt the parameters in each layer, once $\frac{\partial \mathcal{L}}{\partial \boldsymbol{x}_4}$ is computed. The gradient of the loss wrt the parameters in each layer can be computed as follows:
+\[
+\begin{aligned}
+&\frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_3} = \frac{\partial \mathcal{L}}{\partial \boldsymbol{x}_4} \frac{\partial \boldsymbol{x}_4}{\partial \boldsymbol{\theta}_3} \\
+&\frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_2} = \frac{\partial \mathcal{L}}{\partial \boldsymbol{x}_4} \frac{\partial \boldsymbol{x}_4}{\partial \boldsymbol{x}_3} \frac{\partial \boldsymbol{x}_3}{\partial \boldsymbol{\theta}_2} \\
+&\frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_1} = \frac{\partial \mathcal{L}}{\partial \boldsymbol{x}_4} \frac{\partial \boldsymbol{x}_4}{\partial \boldsymbol{x}_3} \frac{\partial \boldsymbol{x}_3}{\partial \boldsymbol{x}_2} \frac{\partial \boldsymbol{x}_2}{\partial \boldsymbol{\theta}_1}
+\end{aligned}
+\]
+where each $\dfrac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_k} = (\nabla_{\boldsymbol{\theta}_k} \mathcal{L})^\mathsf{T}$ is a $d_k$-dimensional gradient row vector, where $d_k$ is the number of parameters in layer $k$. 
+These can be computed recursively, by multiplying the gradient row vector at layer $k$ by the Jacobian $\dfrac{\partial \boldsymbol{x}_k}{\partial \boldsymbol{x}_{k-1}}$ which is an $n_k \times n_{k-1}$ matrix, where $n_k$ is the number of hidden units in layer $k$.
+
+\begin{algorithm}[H]
+\caption{Backpropagation for an MLP with $K$ layers and scalar output}
+\begin{algorithmic}[1]
+\State // Forward pass
+\State $\boldsymbol{x}_1 := \boldsymbol{x}$
+\For{$k = 1 : K$}
+    \State $\boldsymbol{x}_{k+1} = \boldsymbol{f}_k(\boldsymbol{x}_k, \boldsymbol{\theta}_k)$
+\EndFor
+\State // Backward pass
+\State $\boldsymbol{u}_{K+1} := 1$
+\For{$k = K : 1$}
+    \State $\boldsymbol{g}_k := \boldsymbol{u}_{k+1}^\mathsf{T} \dfrac{\partial \boldsymbol{f}_k(\boldsymbol{x}_k, \boldsymbol{\theta}_k)}{\partial \boldsymbol{\theta}_k}$
+    \State $\boldsymbol{u}_k^\mathsf{T} := \boldsymbol{u}_{k+1}^\mathsf{T} \dfrac{\partial \boldsymbol{f}_k(\boldsymbol{x}_k, \boldsymbol{\theta}_k)}{\partial \boldsymbol{x}_k}$
+\EndFor
+\State // Output
+\State Return $\mathcal{L} = \boldsymbol{x}_{K+1}$, $\nabla_{\boldsymbol{x}} \mathcal{L} = \boldsymbol{u}_1$, $\{\nabla_{\boldsymbol{\theta}_k} \mathcal{L} = \boldsymbol{g}_k : k = 1:K\}$
+\end{algorithmic}
+\end{algorithm}
+Since the the final layer returns a scalar $m < n$, it is more efficient to use reverse mode differentation to compute the gradient vectors.
+This algorithm computes both $\{ \nabla_{\boldsymbol{\theta}_k} \mathcal{L} \in \mathbb{R}^{d_k} \}_ {k=1}^K$ and $\nabla_{\boldsymbol{x}} \mathcal{L} \in \mathbb{R}^n$, but only the former is used for parameter learning.
+
+Recall that the Jacobian for a layer of the form $\boldsymbol{f}: \, \mathbb{R}^n \to \mathbb{R}^m$ is defined by,
+\[
+\boldsymbol{J}_{\boldsymbol{f}}(\boldsymbol{x}) = \frac{\partial \boldsymbol{f}(\boldsymbol{x})}{\partial \boldsymbol{x}} = \begin{pmatrix} \dfrac{\partial f_1}{\partial x_1} & \cdots & \dfrac{\partial f_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \dfrac{\partial f_m}{\partial x_1} & \cdots & \dfrac{\partial f_m}{\partial x_n} \end{pmatrix} = \begin{pmatrix} \nabla f_1(\boldsymbol{x})^\mathsf{T} \\ \vdots \\ \nabla f_m(\boldsymbol{x})^\mathsf{T} \end{pmatrix} = \left( \frac{\partial \boldsymbol{f}}{\partial x_1}, \cdots, \frac{\partial \boldsymbol{f}}{\partial x_n} \right)
+\in \mathbb{R}^{m \times n}
+\]
+It is essential to be able to compute VJP $\boldsymbol{u}^\top \boldsymbol{J}_{\boldsymbol{f}}(\boldsymbol{x})$ (i.e. rows) for common layers.
+\begin{itemize}
+    \item Cross entropy layer. A cross entropy layer takes logits $\boldsymbol{x}$ and target $\boldsymbol{y}$ as inputs, and returning a scalar:
+    \[
+    z = f(\boldsymbol{x}) = -\sum_c y_c \log(\text{softmax}(\boldsymbol{x})_c) = -\sum_{c=1}^C y_c \log p_c
+    \] 
+    where $\boldsymbol{p} = \text{softmax}(\boldsymbol{x}) = \frac{e^{x_c}}{\sum_{c'=1}^C e^{x_{c'}}}$ are the predicted class probabilites
+    and $\boldsymbol{y}$ is the true distribution (usually a one-hot vector). Thus, differentiate $z$ wrt an element of $\boldsymbol{x}$:
+    \[
+    \frac{\partial z}{\partial x_i} = -\sum_{c=1}^C y_{c} \frac{\partial}{\partial x_i} \log p_{c} = -\sum_{c=1}^C y_{c} \frac{1}{p_{c}} \frac{\partial p_{c}}{\partial x_i}
+    = -\sum_{c=1}^C y_{c} (\mathbb{I}(i=c) - p_i)
+    \]
+    where $\frac{\partial p_{c}}{\partial x_i} = p_{c}(\mathbb{I}(i=c) - p_i)$. If the true target is $c$, then we define $\boldsymbol{y} = \mathbb{I}(i=c)$, the Jacobian wrt the input is
+    \[
+    \boldsymbol{J} = \frac{\partial z}{\partial \boldsymbol{x}} = (\boldsymbol{p} - \boldsymbol{y})^\top \in \mathbb{R}^{1 \times C}
+    \]
+    \item Elementwise nonlinearity layer. An elementwise nonlinearity layer follows,
+    \[
+    \boldsymbol{z} = \boldsymbol{f}(\boldsymbol{x}) = \varphi(\boldsymbol{x}), \, \text{with} \, z_i = \varphi(x_i)
+    \]
+    The Jacobian wrt the input is,
+    \[
+    \boldsymbol{J} = \frac{\partial \boldsymbol{z}}{\partial \boldsymbol{x}} = \text{diag}(\varphi'(\boldsymbol{x})) \in \mathbb{R}^{n \times n}
+    \]
+    since $\frac{\partial z_i}{\partial x_j} = \varphi'(x_i) \mathbb{I}(i=j)$.
+    \item Linear layer. A linear layer follows,
+    \[
+    \boldsymbol{z} = \boldsymbol{f}(\boldsymbol{x}) = \boldsymbol{W} \boldsymbol{x} + \boldsymbol{b}
+    \]
+    where $\boldsymbol{W} \in \mathbb{R}^{m \times n}$, $\boldsymbol{z} \in \mathbb{R}^m$, and $\boldsymbol{x} \in \mathbb{R}^n$.
+    The Jacobian wrt the input is,
+    \[
+    \boldsymbol{J} = \frac{\partial \boldsymbol{z}}{\partial \boldsymbol{x}} = \boldsymbol{W} \in \mathbb{R}^{m \times n}
+    \]
+
+    The Jacobian wrt the weight matrix, $\mathbf{J} = \frac{\partial \boldsymbol{z}}{\partial \mathbf{W}}$ is a $m \times (m \times n)$ matrix, which is effectively $m$ matrices $\{ \frac{\partial z_k}{\partial \mathbf{W}} \}_{k=1}^m$ stacking together. 
+    For each $(i, j)$ entry of $\frac{\partial z_k}{\partial \mathbf{W}}$, consider
+    \[
+    z_k = \sum_{l=1}^{n} W_{kl} x_l
+    \]
+    \[
+    \left[ \frac{\partial z_k}{\partial \mathbf{W}} \right]_{ij} = \frac{\partial z_k}{\partial W_{ij}} = \sum_{l=1}^{n} x_l \frac{\partial}{\partial W_{ij}} W_{kl} = \sum_{l=1}^{n} x_l \mathbb{I}(i = k \text{ and } j = l) = x_j \mathbb{I}(i = k)
+    \]
+    Compactly, the VJP between $\boldsymbol{e}_k^\mathsf{T} \in \mathbb{R}^{1 \times m}$ and $\dfrac{\partial \boldsymbol{z}}{\partial \mathbf{W}} \in \mathbb{R}^{m \times (m \times n)}$ can be represented as a matrix of shape $1 \times (m \times n)$. Note that
+    \[
+    \begin{aligned}
+    \boldsymbol{e}_k^\mathsf{T} \frac{\partial \boldsymbol{z}}{\partial \mathbf{W}} = \frac{\partial z_k}{\partial \mathbf{W}} &= 
+    \begin{pmatrix}
+    0 & 0 & \cdots & 0 \\
+    \vdots &  &  & \vdots \\
+    x_1 & x_2 & \cdots & x_n \\
+    \vdots &  &  & \vdots \\
+    0 & 0 & \cdots & 0
+    \end{pmatrix}
+    , \, \text{where row $k$ is $\boldsymbol{x}^\top$, all other rows are zero} \\
+    &= \boldsymbol{e}_k \, \boldsymbol{x}^\top \in \mathbb{R}^{m \times n}
+    \end{aligned}
+    \]
+\end{itemize}
+
+\subsubsection{Computation graphs: beyond MLPs}
+MLPs are a simple kind of DNN in which each layer feeds directly into the next, forming a chain structure. 
+However, modern DNNs can combine differentiable components in much more complex ways, creating a computation graph. 
+The only restriction is that the computation graph forms a directed acyclic graph (DAG), where each node is a differentiable function of all its inputs.
+
+Note that during the backward pass, since the computation graph is no longer a chain, we may need to sum gradients along multiple paths. 
+In general,
+\[
+\frac{\partial \boldsymbol{o}}{\partial \boldsymbol{x}_j} = \sum_{k \in \text{Ch}(j)} \frac{\partial \boldsymbol{o}}{\partial \boldsymbol{x}_k} \frac{\partial \boldsymbol{x}_k}{\partial \boldsymbol{x}_j}
+\]
+where the sum is over all children of node $j$ in the computation graph. This is multivariate chain rule.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\linewidth]{images/diff_graph.png}
+  \caption{Automatic differentiation at a node $j$ in a computation graph.}
+\end{figure}
+
+\subsection{Neural network training}
+The standard approach to training a neural network is to use maximum likelihood estimation (MLE) to find the parameters $\boldsymbol{\theta}$ that maximize the likelihood of the training data. This is equivalent to minimizing the negative log-likelihood (NLL) loss function:
+\[
+\mathcal{L}(\boldsymbol{\theta}) = - \log p(\mathcal{D} | \boldsymbol{\theta}) = -\sum_{n=1}^{N} \log p(\boldsymbol{y}_n | \boldsymbol{x}_n; \boldsymbol{\theta})
+\]
+Then, use backprop algorithm to compute the gradient of the loss function wrt the parameters $\nabla_{\boldsymbol{\theta}} \mathcal{L}(\boldsymbol{\theta})$, and use a gradient-based optimization algorithm (eg. SGD) to update the parameters.
+
+Note that the DNN loss is not a convex objective, so in general we will not be able to find the global optimum.
+However, SGD can often find suprisingly good solutions.
+
+\subsubsection{Stochastic gradient descent and learning rate tuning}
+\textbf{Stochastic optimization} aims to minimize the average value of a function:
+\[
+\mathcal{L}(\boldsymbol{\theta}) = \mathbb{E}_{q(\boldsymbol{z})}[\mathcal{L}(\boldsymbol{\theta}, \boldsymbol{z})]
+\]
+where $\boldsymbol{z}$ is a random input to the objective function, which could be a ``noise" term, or it could be a training example drawn randomly from the training set.
+
+\textbf{Stochastic gradient descent} (SGD) assumes a way to compute an unbiased estimate of the gradient of $\mathcal{L}$.
+Then, at each iteration $t$, $\mathcal{L}_t(\boldsymbol{\theta}) = \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{z}_t)$ where $\boldsymbol{z}_t \sim q$.
+If the distribution $q$ is independent from the parameters $\boldsymbol{\theta}$, then denote $\boldsymbol{g}_t = \nabla_{\boldsymbol{\theta}} \mathcal{L}_t(\boldsymbol{\theta}_t)$.
+In this case, the algorithm is,
+\[
+\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t - \eta_t \boldsymbol{g}_t = \boldsymbol{\theta}_t - \eta_t \nabla_{\boldsymbol{\theta}} \mathcal{L}_t(\boldsymbol{\theta}_t, \boldsymbol{z}_t)
+\]
+As long as the gradient estimate is unbiased, then this method will converge to a stationary point, providing the learning rate $\eta_t$ is decayed properly.
+
+An application of SGD is minimizing the empirical risk. 
+\[
+\mathcal{L}(\boldsymbol{\theta}_t) = \frac{1}{N} \sum_{n=1}^{N} \ell(\boldsymbol{y}_n, f(\boldsymbol{x}_n; \boldsymbol{\theta}_t)) = \frac{1}{N} \sum_{n=1}^{N} \mathcal{L}_n(\boldsymbol{\theta}_t)
+\]
+The gradient of this objective has the form
+\[
+\boldsymbol{g}_t = \frac{1}{N} \sum_{n=1}^{N} \nabla_{\boldsymbol{\theta}} \mathcal{L}_n(\boldsymbol{\theta}_t) = \frac{1}{N} \sum_{n=1}^{N} \nabla_{\boldsymbol{\theta}} \ell(\boldsymbol{y}_n, f(\boldsymbol{x}_n; \boldsymbol{\theta}_t))
+\]
+This requires summing over all $N$ training examples, and thus can be slow if $N$ is large. Fortunately we can approximate this by sampling a \textbf{minibatch} of $B \ll N$ samples to get
+\[
+\boldsymbol{g}_t \approx \frac{1}{|\mathcal{B}_t|} \sum_{n \in \mathcal{B}_t} \nabla_{\boldsymbol{\theta}} \mathcal{L}_n(\boldsymbol{\theta}_t) = \frac{1}{|\mathcal{B}_t|} \sum_{n \in \mathcal{B}_t} \nabla_{\boldsymbol{\theta}} \ell(\boldsymbol{y}_n, f(\boldsymbol{x}_n; \boldsymbol{\theta}_t))
+\]
+where $\mathcal{B}_t$ is a set of randomly chosen examples to use at iteration $t$.
+
+\subsubsection*{Learning rate tuning}
+Rather than choosing a single constant learning rate, we can use a \textbf{learning rate schedule}, in which we adjust the step size over time. 
+
+Theoretically, a sufficient condition for SGD to achieve convergence is if the learning rate schedule satisfies the Robbins-Monro conditions:
+\[
+\eta_t \to 0, \quad \sum_{t=1}^{\infty} \eta_t = \infty, \quad \sum_{t=1}^{\infty} \eta_t^2 < \infty
+\]
+\[
+\Rightarrow \frac{\sum_{t=1}^{\infty} \eta_t^2}{\sum_{t=1}^{\infty} \eta_t} \to 0
+\]
+Intuitively, $\sum_{t=1}^{\infty} \eta_t = \infty$ ensures that the learning rate does not decay too fast;
+$\sum_{t=1}^{\infty} \eta_t^2 < \infty$ ensures that the learning rate must decay quickly enough that the variance introduced by noisy gradient estimates eventually vanishes. 
+
+Some common examples of learning rate schedules:
+\begin{itemize}
+    \item Piecewise constant: $\eta_t = \eta_i$ if $t_i < t < t_{i+1}$.
+    \item Exponential decay: $\eta_t = \eta_0 e^{-\lambda t}$.
+    \item Polynomial decay: $\eta_t = \eta_0 (\beta t + 1)^{-\alpha}$. 
+    \item Cyclic learning rate: increase and decrease the learning rate multiple times, in a cyclical fashion, to escape local minima.
+\end{itemize}
+
+\subsubsection{Vanishing and exploding gradients}
+When training a very deep neural network, the gradients can either vanish (become very small) or explode (become very large) as they are backpropagated through the layers, because the error signal is being passed through a series of layers which either amplify or diminish it.
+
+Mathematically, consider the gradient of the loss wrt a node at layer $l$:
+\[
+\underbrace{\frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_l}}_{1 \times n_l} = \underbrace{\frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_{l+1}}}_{1 \times n_{l+1}} \underbrace{\frac{\partial \boldsymbol{z}_{l+1}}{\partial \boldsymbol{z}_l}}_{n_{l+1} \times n_l} = \left( \mathbf{J}_l \boldsymbol{g}_{l+1} \right)^\top
+\]
+where $\mathbf{J}_l = \left(\frac{\partial \boldsymbol{z}_{l+1}}{\partial \boldsymbol{z}_l}\right)^\top$ is the Jacobian matrix and $\boldsymbol{g}_{l+1} =\left( \frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_{l+1}}\right) ^\top$ is the gradient at the next layer.
+
+If $\mathbf{J}_l$ is constant across layer, then the gradient of loss wrt to layer $l$ will be $\mathbf{J}^{L - l} \boldsymbol{g}_L$. Thus the behavior of the system depends on the eigenvectors of $\mathbf{J}$.
+Although $\mathbf{J}$ is a real-valued matrix, it is not (in general) symmetric, so its eigenvalues and eigenvectors can be complex-valued, with the imaginary components corresponding to oscillatory behavior. 
+Let $\lambda$ be the spectral radius of $\mathbf{J}$, which is the maximum of the absolute values of the eigenvalues. If this is greater than 1, the gradient can explode; if this is less than 1, the gradient can vanish.
+
+The exploding gradient can be mitigated by gradient clipping, in which capping the magitude of the gradient if it becomes too large,
+\[
+\boldsymbol{g}' = \max (1, \frac{c}{\| g \|}) \boldsymbol{g}
+\]
+the norm of $\boldsymbol{g}'$ can never exceed $c$.
+
+The vanishing gradient problem is harder to solve, the following sections demonstrate several solutions: non-saturating activations, residual connections, parameter initialization.
+
+\subsubsection{Non-saturating activations}
+
+The sigmoid activation function saturates at 0 for large negative inputs, and at 1 for large positive inputs. It turns out that the gradient signal in these regimes is 0, preventing backpropagation from working
+
+Consider a layer which computes $\boldsymbol{z} = \sigma(\boldsymbol{a}) = \sigma \left( \mathbf{W} \boldsymbol{x} \right)$, where $\sigma(a) = \frac{1}{1 + \exp(-a)}$.
+The derivative of the activation function (elementwise) is given by $\sigma'(a) = \sigma(a)(1 - \sigma(a))$.
+Thus, the derivative of the output of the layer $\boldsymbol{z}$ wrt the input $\boldsymbol{x}$ is,
+\[
+\frac{\partial \boldsymbol{z}}{\partial \boldsymbol{x}} = \frac{\partial \boldsymbol{z}}{\partial \boldsymbol{a}} \cdot \frac{\partial \boldsymbol{a}}{\partial \boldsymbol{x}} = \text{diag}(\boldsymbol{z} \odot (1 - \boldsymbol{z})) \cdot \mathbf{W} 
+\]
+The derivative of the output of the layer $\boldsymbol{z}$ wrt the input $\mathbf{W}$ is,
+\[
+\begin{aligned}
+\frac{\partial z_k}{\partial \mathbf{W}} = \frac{\partial z_k}{\partial a_k} \cdot \frac{\partial a_k}{\partial \mathbf{W}} &= \boldsymbol{e}_k^\top \text{diag}(\boldsymbol{z} \odot (1 - \boldsymbol{z})) \boldsymbol{e}_k \cdot \boldsymbol{e}_k^\top \frac{\partial \boldsymbol{a}}{\partial \mathbf{W}} \\
+&= z_k(1 - z_k) \boldsymbol{e}_k \boldsymbol{x}^\top
+\end{aligned}
+\]
+Since only $k$'s row in $z_k(1 - z_k) \boldsymbol{e}_k \boldsymbol{x}^\top$ is non-zero, so define $\frac{\partial \boldsymbol{z}}{\partial \mathbf{W}} = \sum_k \frac{\partial z_k}{\partial \mathbf{W}}$ which is a plain matrix instead of a full tensor form.
+\[
+\frac{\partial \boldsymbol{z}}{\partial \mathbf{W}} = \sum_k z_k(1 - z_k) \boldsymbol{e}_k \boldsymbol{x}^\top = \boldsymbol{z} \odot (1 - \boldsymbol{z}) \cdot \boldsymbol{x}^\top 
+\]
+Hence, if $z$ is near 0 or 1, the gradients wrt the parameters will go to 0.
+
+Besides the saturating sigmoid, there are few types of non-saturating activation functions:
+\begin{itemize}
+    \item ReLU. ReLU function turns off negative inputs, and passes positive inputs unchanged:
+    \[
+    \text{ReLU}(a) = \max (a, 0) = a \mathbb{I}(a>0)
+    \]
+    \[
+    \Rightarrow \text{ReLU}'(a) = \mathbb{I}(a>0)
+    \]
+    Consider a layer to compute $\boldsymbol{z} = \text{ReLU}(\mathbf{W} \boldsymbol{x})$, the Jacobians look like:
+    \[
+    \frac{\partial \boldsymbol{z}}{\partial \boldsymbol{x}} = \mathbf{W}^\top \mathbb{I}(\boldsymbol{z} > 0) , \quad
+    \frac{\partial \boldsymbol{z}}{\partial \mathbf{W}} = \mathbb{I}(\boldsymbol{z} > 0) \boldsymbol{x}^\top
+    \]
+    Hence the gradient will not vanish, as long as $\boldsymbol{z}$ is positive. However, when weights are large and negative,
+    there is a good chance that some element in $\mathbf{W} \boldsymbol{x}$ is large and negative, this will cause the gradient for the weights to go to 0
+    and cannot escape, i.e. dead ReLU problem.
+    \item Leaky ReLU.
+    \[
+    \text{LReLU}(a;\alpha) = \max (\alpha a, a) \quad \text{where} \, \, 0 < \alpha < 1
+    \]
+    The slope of this function is 1 for positive inputs, and $\alpha$ for negative inputs.
+    If $\alpha$ is learnable rather than fixed, the leaky ReLU becomes parametric ReLU.
+    \item ELU.
+    \[
+    \text{ELU}(a; \alpha) = \begin{cases} \alpha(e^a - 1) & \text{if } a \leq 0 \\ a & \text{if } a > 0 \end{cases}
+    \]
+    ELU has the advantage of been a smooth function.
+    A variant of ELU is self-normalising ELU, 
+    \[
+    \text{SELU}(a; \alpha, \lambda) = \lambda \text{ELU}(a; \alpha)
+    \]
+\end{itemize}
+
+\subsubsection{Residual connections}
+Another solution to the vanishing gradient problem for DNNs is to use a \textbf{residual network} or \textbf{ResNet}.
+
+This is a feedforward model in which each layer has the form of a residual block, defined by
+\[
+\mathcal{F}'_l(\boldsymbol{x}) = \mathcal{F}_l(\boldsymbol{x}) + \boldsymbol{x}
+\]
+where $\mathcal{F}_l(\boldsymbol{x})$ is a standard shallow nonlinear mapping (eg. linear $\to$ activation $\to$ linear). Graphically,
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/resblock.png}
+  \caption{A residual block.}
+\end{figure}
+A model with residual connections has the same number of parameters as a model without residual
+connections, but it is easier to train. The reason is that gradients can flow directly from the output
+to earlier layers. Consider the activations of the output layer $L$, which can be derived in terms of any previous layer $l$ as:
+\[
+\boldsymbol{z}_L = \boldsymbol{z}_l + \sum_{i=l}^{L-1} \mathcal{F}_i (\boldsymbol{z}_i ; \boldsymbol{\theta}_i)
+\]
+Thus,
+\[
+\begin{aligned}
+\frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_l} &= \frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_l} \frac{\partial \boldsymbol{z}_l}{\partial \boldsymbol{\theta}_l}
+= \frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_L} \frac{\partial \boldsymbol{z}_L}{\partial \boldsymbol{z}_l} \frac{\partial \boldsymbol{z}_l}{\partial \boldsymbol{\theta}_l} \\
+&= \frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_L} \left( 1 + \sum_{i=l}^{L-1} \frac{\partial \mathcal{F}_i(\boldsymbol{z}_i; \boldsymbol{\theta}_i)}{\partial \boldsymbol{z}_l} \right) \frac{\partial \boldsymbol{z}_l}{\partial \boldsymbol{\theta}_l} \\
+&= \frac{\partial \mathcal{L}}{\partial \boldsymbol{z}_L} \frac{\partial \boldsymbol{z}_l}{\partial \boldsymbol{\theta}_l} + \text{other terms}
+\end{aligned}
+\]
+The gradient at layer $l$ depends directly on the gradient at layer $L$, independent of the depth of the network.
+
+\subsubsection{Parameter initialization}
+The objective function for DNN training is non-convex, the way that we initialize the parameters affect the final optimization solution.
+It is shown that sampling parameters from a standard normal with fixed variance can
+result in exploding activations or gradients.
+
+Consider a linear layer without an activation function given by $o_i = \sum_{j=1}^{n_{\text{in}}} w_{ij} x_j$; suppose $w_{ij} \sim \mathcal{N}(0, \sigma^2)$, and $\mathbb{E}[x_j] = 0$ and $\mathbb{V}[x_j] = \gamma^2$, where we assume $x_j$ are independent of $w_{ij}$. The mean and variance of the output is given by
+\[
+\begin{aligned}
+\mathbb{E}[o_i] &= \sum_{j=1}^{n_{\text{in}}} \mathbb{E}[w_{ij} x_j] = \sum_{j=1}^{n_{\text{in}}} \mathbb{E}[w_{ij}] \mathbb{E}[x_j] = 0 \\
+\mathbb{V}[o_i] &= \mathbb{E}[o_i^2] - (\mathbb{E}[o_i])^2 = \sum_{j=1}^{n_{\text{in}}} \mathbb{E}[w_{ij}^2 x_j^2] - 0 = \sum_{j=1}^{n_{\text{in}}} \mathbb{E}[w_{ij}^2] \mathbb{E}[x_j^2] = n_{\text{in}} \sigma^2 \gamma^2
+\end{aligned}
+\]
+To keep the output variance from blowing up, we need to ensure $n_{\text{in}} \sigma^2 = 1$ (or some other constant), where $n_{\text{in}}$ is the \textbf{fan-in} of a unit (number of incoming connections).
+
+For the backwards pass, similarly, the variance of the gradients can blow up unless $n_{\text{out}} \sigma^2 = 1$, where $n_{\text{out}}$ is the \textbf{fan-out} of a unit (number of outgoing connections). To satisfy both requirements at once, we set $\frac{1}{2}(n_{\text{in}} + n_{\text{out}}) \sigma^2 = 1$, or equivalently
+\[
+\sigma^2 = \frac{2}{n_{\text{in}} + n_{\text{out}}}
+\]
+This is known as Xavier initialization or Glorot initialization.
+
+Although the above derivation assumes Gaussian and linearity, the analysis applied to non-Gaussian initialization and nonlinear units. 
+The best choice of initialization method depends on the activation function as well.
+
 
 \clearpage
 \part{Dimentionality Reduction}
