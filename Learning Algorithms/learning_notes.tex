@@ -1047,6 +1047,11 @@ It is essential to be able to compute VJP $\boldsymbol{u}^\top \boldsymbol{J}_{\
     &= \boldsymbol{e}_k \, \boldsymbol{x}^\top \in \mathbb{R}^{m \times n}
     \end{aligned}
     \]
+    Therefore, for a general upstream gradient $\mathbf{g} = \frac{\partial \ell}{\partial \mathbf{z}} \in \mathbb{R}^{m \times 1}$,
+    \[
+    \mathbf{g}^\top \frac{\partial \mathbf{z}}{\partial \mathbf{W}} = \sum_{k} g_k\, \mathbf{e}_k \mathbf{x}^\top = \mathbf{g}\,\mathbf{x}^\top
+    \]
+    since $\sum_k g_k \mathbf{e}_k = \mathbf{g}$.
 \end{itemize}
 
 \subsubsection{Computation graphs: beyond MLPs}
@@ -1257,6 +1262,378 @@ This is known as Xavier initialization or Glorot initialization.
 
 Although the above derivation assumes Gaussian and linearity, the analysis applied to non-Gaussian initialization and nonlinear units. 
 The best choice of initialization method depends on the activation function as well.
+
+\subsection{Regularization}
+One of the main statistical issues when training a neural network is overfitting, regularization is a way to avoid this.
+There are several regularization techniques.
+
+\subsubsection*{Early stopping}
+The simplest way to prevent overfitting is called early stopping, which refers to the
+heuristic of stopping the training procedure when the error on the validation set starts to increase.
+
+\subsubsection*{Weight decay}
+We can turn the maximum likelihood estimation into a maximum a posterior estimation by imposing a prior on the parameters.
+Commonly, using a Gaussian prior for the weights $\mathcal{N}(\boldsymbol{w}|\boldsymbol{0}, \alpha^2 \mathbf{I})$ and the biases $\mathcal{N}(\boldsymbol{b}|\boldsymbol{0}, \beta^2 \mathbf{I})$.
+This is called weight decay, since it encourages small weights by penalizing large wegihts.
+
+\subsubsection*{Dropout}
+Dropout means randomly turn off all the outgoing connections from each neuron with probability $p$, on a per-example basis.
+Therefore, each neuron must learn to perform well even if some of the other units are missing at random, instead of learning complex but fragile dependencies on each other.
+
+Denoting $w_{lji}$ the real learned weight parameter through gradient descent, $\epsilon_{li} \sim \text{Ber}(1-p)$ is the random 0/1 mask resampled for every training example.
+
+Viewing dropout as estimating a noisy version of the weights, $\theta_{lji} = w_{lji} \epsilon_{li}$, thus $\theta_{lji}$ is the effective weight that actually gets used in that one forward pass. 
+In other words, if we sample $\epsilon_{li} = 0$ then all of the weights going out of unit $i$ in layer $l-1$ into any $j$ in layer $l$ will be set to 0.
+
+At test time, we usually turn the noise off.
+To ensure the weights have the same expectation at test time as they did during training (so the input activation to the neurons is the same, on average), at test time we should use $w_{lji}^{\text{test}} = w_{lji} \mathbb{E}[\epsilon_{li}]$
+
+We can keep the noise/dropouts during test as well. The result is an \textbf{ensemble} of networks, each with slightly different sparse graph structures. This is called \textbf{Monte Carlo dropout},
+\[
+p(\boldsymbol{y} | \boldsymbol{x}, \mathcal{D}) \approx \frac{1}{S} \sum_{s=1}^{S} p(\boldsymbol{y} | \boldsymbol{x}, \hat{\mathbf{W}} \epsilon^s + \hat{\boldsymbol{b}})
+\]
+where $S$ is the number of samples, and $\hat{\mathbf{W}} \epsilon^s$ indicates all the estimated weight matrices are multiplied by a sampled noise vector. 
+This can sometimes provide a good approximation to the Bayesian posterior predictive distribution $p(\boldsymbol{y} | \boldsymbol{x}, \mathcal{D})$.
+
+\subsubsection*{Regularization effects of (stochastic) gradient descent}
+
+Some optimization methods may finds sharp minima in the loss landscape (i.e. narrow but deep ``hole''). 
+However, such solutions generally correspond to a model that has overfit the data. 
+It is better to flat minima, which are more robust and generalize better. 
+Note that flat minima correspond to regions in parameter space where there is a lot of posterior uncertainty, and hence samples from this region are less able to precisely memorize irrelevant details about the training set.
+SGD often finds such flat minima by adding noises, which are called \textbf{implicit regularization}.
+
+The continuous time gradient flow (ODE from $\boldsymbol{w}_{t+1} = \boldsymbol{w}_{t} - \epsilon \nabla \mathcal{L}(\boldsymbol{w}_{t})$ as $\epsilon \to 0$) can be approximated by
+\[
+\dot{\boldsymbol{w}} = - \nabla_{\boldsymbol{w}} \tilde{\mathcal{L}}_{GD}(\boldsymbol{w})
+\]
+where
+\[
+\tilde{\mathcal{L}}_{GD}(\boldsymbol{w}) = \mathcal{L}(\boldsymbol{w}) + \frac{\epsilon}{4} \| \nabla \mathcal{L}(\boldsymbol{w}) \|^2
+\]
+wherer $\mathcal{L}(\boldsymbol{w})$ is the original loss (finite $\epsilon > 0$), and the second term is an implicit regularization term that penalizes solutions with large gradients.
+
+For the stochastic GD, the flow has the form $\dot{\boldsymbol{w}} = - \nabla_{\boldsymbol{w}} \tilde{\mathcal{L}}_{SGD}(\boldsymbol{w})$, where 
+\[
+\tilde{\mathcal{L}}_{SGD}(\boldsymbol{w}) = \mathcal{L}(\boldsymbol{w}) + \frac{\epsilon}{4m} \sum_{k=1}^{m} \| \nabla \mathcal{L}_k(\boldsymbol{w}) \|^2
+\]
+where $m$ is the number of minibatches, and $\mathcal{L}_k(\boldsymbol{w})$ is the loss on the $k$th minibatch.
+
+Comparing the loss of SGD to that of full-batch GD, 
+\[
+\tilde{\mathcal{L}}_{SGD}(\boldsymbol{w}) = \tilde{\mathcal{L}}_{GD}(\boldsymbol{w}) + \frac{\epsilon}{4m} \sum_{k=1}^{m} \| \nabla \mathcal{L}_k(\boldsymbol{w}) - \nabla \mathcal{L}(\boldsymbol{w})\|^2
+\]
+The second term estimates the variance of the minibatch gradients, which is a measure of stability, and hence of generalization ability.
+Thus, SGD not only has computational advantages, but also statistical advantages.
+
+\clearpage
+\section{Recurrent Neural Networks}
+A recurrent neural network (RNN) maps an input space of sequences to an output space of sequences in a stateful way, i.e. the prediction of output $\boldsymbol{y}_t$
+depends on both the input $\boldsymbol{x}_t$ and the hidden state of the system $\boldsymbol{h}_t$, which gets updated over time as the sequence is processed.
+
+\subsection{Sequence generation: Vec2Seq}
+Vec2Seq mdoels map a vector to a sequence, which learn functions of the form: $f_{\boldsymbol{\theta}}$: $\mathbb{R}^D \to \mathbb{R}^{N_\infty C}$
+with $D$ is the size of the input vector, and the output is an arbitrary-length sequence of vectors each of size $C$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/vec2seqRNN.png}
+  \caption{RNN for generating a variable length output sequence $\boldsymbol{y}_{1:T}$ given an
+optional fixed length input vector $\boldsymbol{x}$.}
+\end{figure}
+
+Let $T$ be the length of the output, which is chosen dynamically. The RNN corresponds to the conditional generative model:
+\[
+p(\boldsymbol{y}_{1:T} | \boldsymbol{x}) = \sum_{\boldsymbol{h}_{1:T}} p(\boldsymbol{y}_{1:T}, \boldsymbol{h}_{1:T} | \boldsymbol{x})
+= \sum_{\boldsymbol{h}_{1:T}} \prod_{t=1}^{T} p(\boldsymbol{y}_t | \boldsymbol{h}_t) p(\boldsymbol{h}_t | \boldsymbol{h}_{t-1}, \boldsymbol{y}_{t-1}, \boldsymbol{x})
+\]
+where $\boldsymbol{h}_t$ is the hidden state and $p(\boldsymbol{h}_1 | \boldsymbol{h}_0, \boldsymbol{y}_0, \boldsymbol{x}) = p(\boldsymbol{h}_1 | \boldsymbol{x})$ is the initial hidden state distribution (often deterministic).
+RNN can be used to generate sequences unconditionally ($\boldsymbol{x} = \emptyset$) or conditionally on $\boldsymbol{x}$.
+\begin{itemize}
+    \item The output distribution $p(\boldsymbol{y}_t | \boldsymbol{h}_t)$ is defined as
+    \[
+    \begin{aligned}
+    p(\boldsymbol{y}_t | \boldsymbol{h}_t) &= \text{Cat}(\boldsymbol{y}_t | \text{softmax}(\mathbf{W}_{hy} \boldsymbol{h}_t + \boldsymbol{b}_y)) \\
+    p(\boldsymbol{y}_t | \boldsymbol{h}_t) &= \mathcal{N}(\boldsymbol{y}_t | \mathbf{W}_{hy} \boldsymbol{h}_t + \boldsymbol{b}_y, \sigma^2 \mathbf{I})
+    \end{aligned}
+    \]
+    for discrete or continuous output. $\mathbf{W}_{hy}$ is the hidden-to-output weights, and $\boldsymbol{b}_y$ is the bias.
+    \item The hidden state distribution $p(\boldsymbol{h}_t | \boldsymbol{h}_{t-1}, \boldsymbol{y}_{t-1}, \boldsymbol{x})$ is assumed to be deterministic here.
+    \[
+    p(\boldsymbol{h}_t | \boldsymbol{h}_{t-1}, \boldsymbol{y}_{t-1}, \boldsymbol{x}) = \mathbb{I}(\boldsymbol{h}_t = f(\boldsymbol{h}_{t-1}, \boldsymbol{y}_{t-1}, \boldsymbol{x}))
+    \]
+    for some deterministic function $f$. The update function $f$ is usually given by
+    \[
+    \boldsymbol{h}_t = \varphi(\mathbf{W}_{xh} [\boldsymbol{x}; \boldsymbol{y}_{t-1}] + \mathbf{W}_{hh} \boldsymbol{h}_{t-1} + \boldsymbol{b}_h)
+    \]
+    where $\mathbf{W}_{hh}$ are the hidden-to-hidden weights, $\mathbf{W}_{xh}$ are the input-to-hidden weights, and $\boldsymbol{b}_h$ are the bias terms.
+    $[\boldsymbol{x}; \boldsymbol{y}_{t-1}]$ means stacking two vectors together to form a larger vector.
+\end{itemize}
+Note that $\boldsymbol{y}_t$ depends on $\boldsymbol{h}_t$, which depends on $\boldsymbol{y}_{t-1}$, which depends on $\boldsymbol{h}_{t-1}$, and so on. 
+Thus, $\boldsymbol{y}_t$ implicitly depends on all past observations and $\boldsymbol{x}$.
+
+Practically, when generating from RNN, first sample $\tilde{\boldsymbol{y}}_t = p(\boldsymbol{y}_t | \boldsymbol{h}_t)$, and then feed in the sampled value to the hidden state, to deterministically compute $\boldsymbol{h}_{t+1} = f(\boldsymbol{h}_{t}, \tilde{\boldsymbol{y}}_{t}, \boldsymbol{x})$,
+from which $\tilde{\boldsymbol{y}}_{t+1}$ is sampled, and so on. Current RNN model only has stochasticity in $p(\boldsymbol{y}_t | \boldsymbol{h}_t)$, the variational RNN adds stochasticity to $p(\boldsymbol{h}_t | \boldsymbol{h}_{t-1}, \boldsymbol{y}_{t-1}, \boldsymbol{x})$.
+
+\subsection{Sequence classification: Seq2Vec}
+
+Seq2Vec models map a sequence to a vector, which learn functions of the form: $f_{\boldsymbol{\theta}}$: $\mathbb{R}^{TD} \to \mathbb{R}^{C}$.
+In other words, Seq2Vec have a single fixed-length output vector $\boldsymbol{y}$ given a variable length sequence as input.
+
+The simplest approach is to use the final state of the RNN as input to the classifier:
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/seq2vecRNN.png}
+  \caption{Simple Seq2Vec RNN for sequence classification.}
+\end{figure}
+\noindent with a generative model
+\[
+p(y | \boldsymbol{x}_{1:T}) = \text{Cat}(y | \text{softmax}(\mathbf{W}\boldsymbol{h}_T))
+\]
+where $y \in \{1, \cdots , C \}$ are class labels for notational simplicity.
+
+Another variant called \textbf{bidirectional RNN} gives better results by letting the hidden states depend on the past and future context.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.2\linewidth]{images/seq2vecbi.png}
+  \caption{Bidirectional Seq2Vec RNN for sequence classification.}
+\end{figure}
+\noindent The hidden states are calculated deterministically via:
+\[
+\boldsymbol{h}_t^{\rightarrow} = \varphi(\mathbf{W}_{xh}^{\rightarrow} \boldsymbol{x}_t + \mathbf{W}_{hh}^{\rightarrow} \boldsymbol{h}_{t-1}^{\rightarrow} + \boldsymbol{b}_h^{\rightarrow})
+\]
+\[
+\boldsymbol{h}_t^{\leftarrow} = \varphi(\mathbf{W}_{xh}^{\leftarrow} \boldsymbol{x}_t + \mathbf{W}_{hh}^{\leftarrow} \boldsymbol{h}_{t+1}^{\leftarrow} + \boldsymbol{b}_h^{\leftarrow})
+\]
+Define $\boldsymbol{h}_t = [\boldsymbol{h}_t^{\rightarrow}, \boldsymbol{h}_t^{\leftarrow}]$ to be the representation of the state at time $t$, taking into account past and future information. 
+Then pool over these hidden states to get the final classifier:
+\[
+\begin{aligned}
+p(y | \boldsymbol{x}_{1:T}) &= \text{Cat}(y | \text{softmax}(\mathbf{W} \overline{\boldsymbol{h}})) \\
+\overline{\boldsymbol{h}} &= \frac{1}{T} \sum_{t=1}^{T} \boldsymbol{h}_t
+\end{aligned}
+\]
+
+\subsection{Sequence translation: Seq2Seq}
+Seq2Seq models map a sequence to a sequence, which learn functions of the form: $f_{\boldsymbol{\theta}}$: $\mathbb{R}^{TD} \to \mathbb{R}^{T'C}$.
+
+\subsubsection*{Aligned case ($T = T'$)}
+For the aligned case, the RNN predicts one label per position. The generative model looks like:
+\[
+\begin{aligned}
+p(\boldsymbol{y}_{1:T} | \boldsymbol{x}_{1:T}) &= \sum_{\boldsymbol{h}_{1:T}} \prod_{t=1}^{T} p(\boldsymbol{y}_t | \boldsymbol{h}_t) p(\boldsymbol{h}_t | \boldsymbol{h}_{t-1}, \boldsymbol{x}_t) \\
+&= \sum_{\boldsymbol{h}_{1:T}} \prod_{t=1}^{T} p(\boldsymbol{y}_t | \boldsymbol{h}_t) \mathbb{I}(\boldsymbol{h}_t = f(\boldsymbol{h}_{t-1}, \boldsymbol{x}_t))
+\end{aligned}
+\]
+with initial hidden state pre-defined as $\boldsymbol{h}_1 = f(\boldsymbol{h}_0, \boldsymbol{x}_1) = f_0(\boldsymbol{x}_1)$.
+Note that $\boldsymbol{y}_t$ depends on $\boldsymbol{h}_t$ which depends only on the past input $\boldsymbol{x}_{1:t}$, corresponding to (a) below.
+Bidirectinal Seq2Seq RNN can also be used to enable the model looks into the ``future" of $\boldsymbol{x}$ as well as the past, corresponding to (b) below.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\linewidth]{images/seq2seqRNN.png}
+  \caption{Seq2Seq RNN model.}
+\end{figure}
+
+Stacking multiple hidden chains on top of each other can produce more expressive RNN model.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/layerRNN.png}
+  \caption{}
+\end{figure}
+\noindent The hidden units for layer $l$ at time $t$ are computed using
+\[
+\boldsymbol{h}_t^l = \varphi_l(\mathbf{W}_{xh}^l \boldsymbol{h}_t^{l-1} + \mathbf{W}_{hh}^l \boldsymbol{h}_{t-1}^l + \boldsymbol{b}_h^l)
+\]
+The output is given by
+\[
+\boldsymbol{o}_t = \mathbf{W}_{ho} \boldsymbol{h}_t^L + \boldsymbol{b}_o
+\]
+
+\subsubsection*{Unaligned case ($T \neq T'$)}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\linewidth]{images/unalignedRNN.png}
+  \caption{Encoder-decoder RNN architecture for mapping sequence $\boldsymbol{x}_{1:T}$ to sequence $\boldsymbol{y}_{1:T'}$}
+\end{figure}
+For unaligned cases, first encode the input sequence to get the context vector $\boldsymbol{c} = f_e(\boldsymbol{x}_{1:T})$, using the last state of an RNN (or average pooling over a biRNN).
+Then generate the output sequence using an RNN decoder $\boldsymbol{y}_{1:T'} = f_d(\boldsymbol{c})$
+
+\subsection{Teacher Forcing}
+When training a language model, the likelihood of a sequence of words $w_1, w_2, \ldots, w_T$, is given by
+\[
+p(\boldsymbol{w}_{1:T}) = \prod_{t=1}^{T} p(w_t \mid \boldsymbol{w}_{1:t-1})
+\]
+In an RNN, we therefore set the input to $x_t = w_{t-1}$ and the output to $y_t = w_t$. Note that we condition on the \emph{ground truth} labels from the past, $\boldsymbol{w}_{1:t-1}$, not labels generated from the model. This is called \textbf{teacher forcing}, since the teacher's values are ``force fed'' into the model as input at each step (i.e., $x_t$ is set to $w_{t-1}$).
+
+Since all the inputs $\boldsymbol{x}_t$ are known in advance from the data, the prediction errors do not propagate through the inputs during training: a wrong prediction at step $t$ does not change $\boldsymbol{x}_{t+1}$. This makes training stable, and all the per-step losses can be evaluated in a single forward pass.
+
+However, at test time the true tokens are not available, so the model has to consume its own predictions. This mismatch between training and inference inputs is called exposure bias, and it means errors can compound during generation.
+
+
+\subsection{Backpropagation Through Time (BPTT)}
+To compute the maximum likelihood estimate of the parameters for an RNN,
+\[
+\boldsymbol{\theta}^\ast = \operatorname*{argmax}_{\boldsymbol{\theta}} p(\boldsymbol{y}_{1:T} | \boldsymbol{x}_{1:T}, \boldsymbol{\theta})
+\]
+To compute the gradient of loss wrt the parameters for MLE, we need to unroll the computation graph of RNNs.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\linewidth]{images/RNNcomputationgraph.png}
+  \caption{An RNN unrolled for 3 time steps, with the target output sequence and shown.}
+\end{figure}
+Specifically, the model is:
+\[
+\begin{aligned}
+\boldsymbol{h}_t &= \mathbf{W}_{hx}\boldsymbol{x}_t + \mathbf{W}_{hh}\boldsymbol{h}_{t-1} \\
+\boldsymbol{o}_t &= \mathbf{W}_{ho}\boldsymbol{h}_t
+\end{aligned}
+\]
+where $\boldsymbol{o}_t$ are the output logits, and the bias terms are dropped for notational simplicity.
+Assuming a single training sequence and $\boldsymbol{y}_t$ is the true target for each time step, so the loss is
+\[
+L = \frac{1}{T} \sum_{t=1}^T \ell (\boldsymbol{y}_t, \boldsymbol{o}_t)
+\]
+The derivative of loss wrt $\mathbf{W}_{ho}$ is
+\[
+\frac{\partial L}{\partial \mathbf{W}_{ho}} = \frac{1}{T} \sum_{t=1}^T \frac{\partial \ell (\boldsymbol{y}_t, \boldsymbol{o}_t)}{\partial \boldsymbol{o}_t} \frac{\partial \boldsymbol{o}_t}{\partial \mathbf{W}_{ho}}
+= \frac{1}{T} \sum_{t=1}^T \frac{\partial \ell (\boldsymbol{y}_t, \boldsymbol{o}_t)}{\partial \boldsymbol{o}_t} \boldsymbol{h}_t^\top
+\]
+The derivative of loss wrt $\mathbf{W}_{hx}$ and $\mathbf{W}_{hh}$ should be derived by flattening and stacking $\mathbf{W}_{hx}$ and $\mathbf{W}_{hh}$ to $\boldsymbol{w}_h$.
+Thus, $\boldsymbol{h}_t = f(\boldsymbol{x}_t, \boldsymbol{h}_{t-1}, \boldsymbol{w}_{h})$ and $\boldsymbol{o}_t = g(\boldsymbol{h}_t, \boldsymbol{w}_o)$. Then,
+\[
+\frac{\partial L}{\partial \boldsymbol{w}_h}
+= \frac{1}{T} \sum_{t=1}^{T} \frac{\partial \ell(y_t, \boldsymbol{o}_t)}{\partial \boldsymbol{w}_h}
+= \frac{1}{T} \sum_{t=1}^{T} \frac{\partial \ell(y_t, \boldsymbol{o}_t)}{\partial \boldsymbol{o}_t} \frac{\partial g(\boldsymbol{h}_t, \boldsymbol{w}_o)}{\partial \boldsymbol{h}_t} \frac{\partial \boldsymbol{h}_t}{\partial \boldsymbol{w}_h}
+\]
+where
+\[
+\begin{aligned}
+\frac{\partial \boldsymbol{h}_t}{\partial \boldsymbol{w}_h}
+&= \frac{\partial f(\boldsymbol{x}_t, \boldsymbol{h}_{t-1}, \boldsymbol{w}_h)}{\partial \boldsymbol{w}_h}
++ \frac{\partial f(\boldsymbol{x}_t, \boldsymbol{h}_{t-1}, \boldsymbol{w}_h)}{\partial \boldsymbol{h}_{t-1}} \frac{\partial \boldsymbol{h}_{t-1}}{\partial \boldsymbol{w}_h} \\
+&= \frac{\partial f(\boldsymbol{x}_t, \boldsymbol{h}_{t-1}, \boldsymbol{w}_h)}{\partial \boldsymbol{w}_h}
++ \sum_{i=1}^{t-1} \left( \prod_{j=i+1}^{t} \frac{\partial f(\boldsymbol{x}_j, \boldsymbol{h}_{j-1}, \boldsymbol{w}_h)}{\partial \boldsymbol{h}_{j-1}} \right) \frac{\partial f(\boldsymbol{x}_i, \boldsymbol{h}_{i-1}, \boldsymbol{w}_h)}{\partial \boldsymbol{w}_h}
+\end{aligned}
+\]
+It is standard to truncate the sum to the most recent $K$ terms for saving computations.
+
+\subsection{Vanishing and Exploding Gradients}
+The activations in an RNN can decay or explode as going forwards in time, since $\mathbf{W}_{hh}$ is multiplied at each time step.
+Similarly, the gradients in an RNN can decay or explode as going backwards in time, since the Jacobians is multiplied at each time step (by chain rule).
+
+A way to solve exploding gradient is to use gradient clipping
+\[
+\boldsymbol{g}' = \max (1, \frac{c}{\| g \|}) \boldsymbol{g}
+\]
+Or there are some methods to control the spectral radius $\lambda$ of the forward mapping $\mathbf{W}_{hh}$ and the backward mapping $\mathbf{J}_{hh}$.
+The simplest way to control the spectral radius is to randomly initialize $\mathbf{W}_{hh}$ in such a way as to ensure $\lambda \approx 1$, and then keep it fixed (i.e., we do not learn $\mathbf{W}_{hh}$). 
+In this case, only the output matrix $\mathbf{W}_{ho}$ needs to be learned, resulting in a convex optimization problem.
+Or we can also learn $\mathbf{W}_{hh}$ by constraining it to be an orthogonal matrix (i.e. eigenvalues are 1).
+
+An alternative to explicitly controlling the spectral radius is to modify the RNN architecture itself,
+to use additive rather than multiplicative updates to the hidden states, similar to the resnet idea.
+
+\subsubsection*{Gated recurrent unit (GRU)}
+Assuming $\mathbf{X}_t \in \mathbb{R}^{D \times N}$, where $N$ is the batch size and $D$ is the input size. The vanilla RNN updates the hidden states via,
+\[
+\mathbf{H}_t = \varphi \big(\mathbf{W}_{hx}\mathbf{X}_t + \mathbf{W}_{hh}\mathbf{H}_{t-1} + \boldsymbol{b} \big)
+\]
+where $\mathbf{W}_{hx} \in \mathbb{R}^{H \times D}$ and $\mathbf{W}_{hh} \in \mathbb{R}^{H \times H}$, $\boldsymbol{b}$ is a bias vector which get broadcasted before adding to the matrices.
+
+
+Instead of overwriting the hidden state, the GRU lets the network learn to selectively remember or forget some pieces of information in the past.
+Defining a new set of learnable parameters,
+\[
+\begin{aligned}
+    \mathbf{W}_{xr}, \, \mathbf{W}_{xz}, \, \mathbf{W}_{xh} &\in \mathbb{R}^{H \times D} \\
+    \mathbf{W}_{hr}, \, \mathbf{W}_{hz}, \, \mathbf{W}_{hh} &\in \mathbb{R}^{H \times H} \\
+    \boldsymbol{b}_r, \, \boldsymbol{b}_z, \, \boldsymbol{b}_h &\in \mathbb{R}^{H \times 1}
+\end{aligned}
+\]
+Then, define two gates, with each element in $\left[ 0, 1 \right]$
+\[
+\begin{aligned}
+    \mathbf{R}_t &= \sigma(\mathbf{W}_{xr}\mathbf{X}_{t} + \mathbf{W}_{hr}\mathbf{H}_{t-1} + \boldsymbol{b}_r) \in \mathbb{R}^{H \times N} \\
+    \mathbf{Z}_t &= \sigma(\mathbf{W}_{xz}\mathbf{X}_{t} + \mathbf{W}_{hz}\mathbf{H}_{t-1} + \boldsymbol{b}_z) \in \mathbb{R}^{H \times N}
+\end{aligned}
+\]
+Given these gates, define a candidate state,
+\[
+\tilde{\mathbf{H}}_t = \text{tanh}(\mathbf{W}_{xh}\mathbf{X}_{t} + \mathbf{W}_{hh} \big(\mathbf{R}_t \odot \mathbf{H}_{t-1}\big) + \boldsymbol{b}_h)
+\]
+If the entries of the reset gate $\mathbf{R}_t$ are close to 1, it is the standard RNN update rule; if the entries are close to 0, the model acts more like an MLP applied to $\mathbf{X}_t$.
+Thus, the candidate state captures the short-term dependencies. Then, the actual hidden state is,
+\[
+\mathbf{H}_t = \mathbf{Z}_t \odot \mathbf{H}_{t-1} + \big(1 - \mathbf{Z}_t \big) \odot \tilde{\mathbf{H}}_t
+\]
+This captures the long-term dependencies.
+
+
+\subsubsection*{Long short term memory (LSTM)}
+The long short term memory (LSTM) model augments the hidden state with a
+memory cell $\mathbf{C}_t \in \mathbb{R}^{H\times N}$, which acts as long-term memory.
+Assuming $\mathbf{X}_t \in \mathbb{R}^{D\times N}$, where $N$ is the batch size and
+$D$ is the input size, define a new set of learnable parameters,
+\[
+\begin{aligned}
+\mathbf{W}_{xo},\, \mathbf{W}_{xi},\, \mathbf{W}_{xf},\, \mathbf{W}_{xc} &\in \mathbb{R}^{H\times D} \\
+\mathbf{W}_{ho},\, \mathbf{W}_{hi},\, \mathbf{W}_{hf},\, \mathbf{W}_{hc} &\in \mathbb{R}^{H\times H} \\
+\boldsymbol{b}_o,\, \boldsymbol{b}_i,\, \boldsymbol{b}_f,\, \boldsymbol{b}_c &\in \mathbb{R}^{H\times 1}
+\end{aligned}
+\]
+where the biases are broadcasted before adding to the matrices.
+
+Then, define three gates, with each element in $[0,1]$: the output gate
+$\mathbf{O}_t$ determines what gets read out, the input gate $\mathbf{I}_t$
+determines what gets written in, and the forget gate $\mathbf{F}_t$ determines
+how much of the old cell is kept,
+\[
+\begin{aligned}
+\mathbf{O}_t &= \sigma(\mathbf{W}_{xo}\mathbf{X}_t + \mathbf{W}_{ho}\mathbf{H}_{t-1} + \boldsymbol{b}_o) \in \mathbb{R}^{H\times N} \\
+\mathbf{I}_t &= \sigma(\mathbf{W}_{xi}\mathbf{X}_t + \mathbf{W}_{hi}\mathbf{H}_{t-1} + \boldsymbol{b}_i) \in \mathbb{R}^{H\times N} \\
+\mathbf{F}_t &= \sigma(\mathbf{W}_{xf}\mathbf{X}_t + \mathbf{W}_{hf}\mathbf{H}_{t-1} + \boldsymbol{b}_f) \in \mathbb{R}^{H\times N}
+\end{aligned}
+\]
+Given these gates, define a candidate cell state,
+\[
+\tilde{\mathbf{C}}_t = \tanh(\mathbf{W}_{xc}\mathbf{X}_t + \mathbf{W}_{hc}\mathbf{H}_{t-1} + \boldsymbol{b}_c)
+\]
+The actual cell update keeps part of the old cell (controlled by the forget
+gate) and adds part of the candidate (controlled by the input gate),
+\[
+\mathbf{C}_t = \mathbf{F}_t \odot \mathbf{C}_{t-1} + \mathbf{I}_t \odot \tilde{\mathbf{C}}_t
+\]
+If $\mathbf{F}_t$ is close to 1 and $\mathbf{I}_t$ is close to 0, the cell
+passes through unchanged, so the model can remember long-term information.
+
+Finally, the hidden state is a transformed version of the cell, provided the
+output gate is on,
+\[
+\mathbf{H}_t = \mathbf{O}_t \odot \tanh(\mathbf{C}_t)
+\]
+Note that $\mathbf{H}_t$ is used both as the output of the unit and as the hidden state for the next time step. 
+Thus $\mathbf{H}_t$ captures short-term memory (what the model has just output), whereas the cell $\mathbf{C}_t$ acts as long-term memory.
+
+\subsection{RNN Generation}
+The per-step predictive distribution of a RNN model is used for generation,
+\[
+p(\boldsymbol{y}_t = \boldsymbol{y} \mid \hat{\boldsymbol{y}}_{1:t-1}, \boldsymbol{x}_{1:t})
+= p(\boldsymbol{y}_t = \boldsymbol{y} \mid \boldsymbol{h}_t)
+= \mathrm{softmax}(\mathbf{W}_{ho}\boldsymbol{h}_t)_{\boldsymbol{y}}
+\]
+There are several ways to generate $\hat{\boldsymbol{y}}_t$,
+\begin{itemize}
+    \item Greedy decoding.
+    \[
+    \hat{\boldsymbol{y}}_t = \operatorname*{argmax}_{\boldsymbol{y}} p(\boldsymbol{y}_t = \boldsymbol{y} \mid \hat{\boldsymbol{y}}_{1:t-1}, \boldsymbol{x}_{1:t})
+    \]
+    \item Sampling $\hat{\boldsymbol{y}}_t$ from $p(\boldsymbol{y}_t = \boldsymbol{y} \mid \hat{\boldsymbol{y}}_{1:t-1}, \boldsymbol{x}_{1:t})$ directly.
+    Optionally with temperature $\tau$ (using $\mathrm{softmax}(\boldsymbol{o}_t/\tau)$) or truncated to the top-$k$ or top-$p$ tokens first.
+    \item Beam search. Keep the top $K$ partial sequences (beam width $K$), scored by their cumulative log-probability. At each step, expand each of them with all $V$ possible next tokens ($V$ is the vocabulary size) to get $VK$ candidates, and keep the top $K$ again. Each candidate carries its own hidden state. Greedy decoding is the special case $K=1$.
+\end{itemize}
+
+
 
 
 \clearpage
