@@ -298,6 +298,151 @@ Minimizing this is equivalent to maximizing the log posterior:
 \]
 This is known as \textbf{MAP estimation} or \textbf{maximum a posterior estimation}.
 
+\subsection{Bayesian Statistics}
+In the Bayesian approach to statistics, parameters $\boldsymbol{\theta}$ are unknown, and data $\mathcal{D}$ are fixed and known.
+The uncertainty about the parameters after seeing the data is given by the posterior distribution,
+\[
+p(\boldsymbol{\theta} \mid \mathcal{D}) = \frac{p(\boldsymbol{\theta})\, p(\mathcal{D} \mid \boldsymbol{\theta})}{p(\mathcal{D})} = \frac{p(\boldsymbol{\theta})\, p(\mathcal{D} \mid \boldsymbol{\theta})}{\int p(\boldsymbol{\theta}')\, p(\mathcal{D} \mid \boldsymbol{\theta}')\, d\boldsymbol{\theta}'}
+\]
+where
+\begin{itemize}
+    \item likelihood $p(\mathcal{D} \mid \boldsymbol{\theta})$: beliefs about what data we expect to see for each setting of the parameters
+    \item prior $p(\boldsymbol{\theta})$: beliefs about the parameters before seeing the data
+    \item marginal likelihood or evidence $p(\mathcal{D})$: normalization constant
+\end{itemize}
+The task of computing this posterior is called Bayesian inference or inference.
+
+In machine learning, we are often very interested in predicting outcomes $\boldsymbol{y}$ given input features $\boldsymbol{x}$.
+For this, the conditional probability distribution $p(\boldsymbol{y} | \boldsymbol{x}, \boldsymbol{\theta})$ is used, which can be a GLM or a neural net.
+This also serves as the building block of the objective function during training, as $p(\mathcal{D} | \boldsymbol{\theta}) = \prod_{n=1}^{N} p(\boldsymbol{y}_n | \boldsymbol{x}_n, \boldsymbol{\theta})$.
+
+The main quantity of interest is the \textbf{posterior predictive distribution}, given by
+\[
+p(\boldsymbol{y} \mid \boldsymbol{x}, \mathcal{D}) = \int p(\boldsymbol{y} \mid \boldsymbol{x}, \boldsymbol{\theta})\, p(\boldsymbol{\theta} \mid \mathcal{D})\, d\boldsymbol{\theta}
+\]
+By \textbf{marginalizing out} the unknown parameters, we reduce the chance of overfitting, since we are effectively computing the weighted average of predictions from an infinite number of models. 
+This act of integrating over uncertainty is at the heart of the Bayesian approach.
+
+Comparing the Bayesian approach to \textbf{plugin approximation}, in which we compute a point estimate $\hat{\boldsymbol{\theta}}$ of the parameters (such as the MLE), and then plug them into the model to make predictions using $p(\boldsymbol{y} | \boldsymbol{x}, \hat{\boldsymbol{\theta}})$.
+i.e. $p(\boldsymbol{\theta} \mid \mathcal{D}) \approx \delta(\boldsymbol{\theta} - \hat{\boldsymbol{\theta}})$, since
+\[
+p(\boldsymbol{y} \mid \boldsymbol{x}, \mathcal{D}) \approx \int p(\boldsymbol{y} \mid \boldsymbol{x}, \boldsymbol{\theta})\, \delta(\boldsymbol{\theta} - \hat{\boldsymbol{\theta}})\, d\boldsymbol{\theta} = p(\boldsymbol{y} \mid \boldsymbol{x}, \hat{\boldsymbol{\theta}})
+\]
+The uncertainty captured by plugin approximation is \textbf{aleatoric uncertainty} or intrinsic uncertainty, and would persist even if we knew the true model and true parameters. 
+However, it ignores \textbf{epistemic uncertainty} due to a lack of knowledge about the truth, which can result in an underestimate of the predictive uncertainty.
+
+\subsubsection*{Exchangeability}
+For a sequence of random variables $(\boldsymbol{x}_1, \cdots, \boldsymbol{x}_n)$ is infinitely exchangeable if, for any $n$, the joint probability $p(\boldsymbol{x}_1, \cdots, \boldsymbol{x}_n)$ is invariant to permutation of the indices. That is, for any permutation $\pi$,
+\[
+p(\boldsymbol{x}_1, \cdots, \boldsymbol{x}_n) = p(\boldsymbol{x}_{\pi_1}, \cdots, \boldsymbol{x}_{\pi_n})
+\]
+For iid variables, they are always excanheable as $p(\boldsymbol{x}_1, \cdots, \boldsymbol{x}_n) = \prod_i p(\boldsymbol{x}_i)$.
+However, exchangeable variables are not always iid, as exchangeablility only requires permutation-invariant and allows dependencies across variables.
+
+Generalizing this idea, an exchangeable sequence can be viewed as coming from a hidden common cause (an unknown random variable $\boldsymbol{\theta}$).
+If $\boldsymbol{\theta}$ are parameters, the following theorem tells that if we believe the data are infinitely exchangeable, 
+then there must exist a $\boldsymbol{\theta}$, a likelihood, and a prior.
+\begin{theorem}[\textbf{de Finetti's theorem}]
+A sequence of random variables $(\boldsymbol{x}_1, \boldsymbol{x}_2, \ldots)$ is infinitely exchangeable iff, for all $n$, we have
+\[
+p(\boldsymbol{x}_1, \ldots, \boldsymbol{x}_n) = \int \prod_{i=1}^{n} p(\boldsymbol{x}_i \mid \boldsymbol{\theta})\, p(\boldsymbol{\theta})\, d\boldsymbol{\theta}
+\]
+where $\boldsymbol{\theta}$ is some hidden common random variable (possibly infinite dimensional). That is, $\boldsymbol{x}_i$ are iid conditional on $\boldsymbol{\theta}$.
+\end{theorem}
+
+\subsection{Prior selection}
+To compute the posterior distribution, the likelihood or the data-generating model $p(\mathcal{D} | \boldsymbol{\theta})$ is known, so the knowledge about the prior distribution $p(\boldsymbol{\theta})$ is essential. This can be chosen (conjugate or noninformative prior) or learned (hierarchical priors or Empirical Bayes).
+
+\begin{enumerate}
+    \item \textbf{Conjugate priors}. A prior $p(\boldsymbol{\theta}) \in \mathcal{F}$ is conjugate prior for a likelihood function $p(\mathcal{D} | \boldsymbol{\theta})$ 
+    if the posterior is in the same parameterized family as the prior $p(\boldsymbol{\theta}|\mathcal{D}) \in \mathcal{F}$.
+    Thus, $\mathcal{F}$ is closed during Bayesian updating. For various likelihood distributions, there are tables listing the conjugate priors.
+    \item \textbf{Noninformative priors}. When we have little or no domain specific knowledge, it is desirable to use an noninformative priors, to ``let the data speak for itself'', eg. flat prior $p(\theta) \propto 1$.
+    \item \textbf{Hierarchical priors}. Let the parameters of the prior be called hyperparameters, and will be denoted by $\boldsymbol{\xi}$. Then put a prior on hyperparameters $p(\boldsymbol{\xi})$, which defines a hierarchical Bayesian model, i.e. $\boldsymbol{\xi} \to \boldsymbol{\theta} \to \mathcal{D}$. 
+    Assuming the prior on the hyperparameters is fixed (e.g., some kind of minimally informative prior), so the joint distribution:
+    \[
+    p(\boldsymbol{\xi}, \boldsymbol{\theta}, \mathcal{D}) = p(\boldsymbol{\xi})\, p(\boldsymbol{\theta} \mid \boldsymbol{\xi})\, p(\mathcal{D} \mid \boldsymbol{\theta})
+    \]
+    The idea is to learn $\boldsymbol{\xi}$ by treating the parameters $\boldsymbol{\theta}$ themselves as latent datapoints being generated by $p(\boldsymbol{\theta} | \boldsymbol{\xi})$.
+    For a group of related datasets $\mathcal{D} = \big(\mathcal{D}_1, \mathcal{D}_2, \cdots, \mathcal{D}_J \big)$, each group of dataset has its own $\boldsymbol{\theta}_j$ and shares the same $\boldsymbol{\xi}$. 
+    The full hierarchical Bayes infers them jointly by computing the joint posterior $p(\boldsymbol{\theta}=\{ \boldsymbol{\theta}_j\}_{j=1}^J, \boldsymbol{\xi} | \mathcal{D})$ using MCMC or variational inference, which can be expensive.
+    \item \textbf{Empirical priors}. Instead of calculating the joint posterior $p(\boldsymbol{\theta}, \boldsymbol{\xi} | \mathcal{D})$, Empirical Bayes calculates the cheaper conditional posterior $p( \boldsymbol{\theta} | \hat{\boldsymbol{\xi}}, \mathcal{D})$, with a point estimate of $\boldsymbol{\xi}$ via
+    \[
+    \hat{\boldsymbol{\xi}} = \mathop{\mathrm{argmax}}_{\boldsymbol{\xi}} p(\mathcal{D} \mid \boldsymbol{\xi}) = \mathop{\mathrm{argmax}}_{\boldsymbol{\xi}} \prod_{j=1}^J \int p(\mathcal{D}_j \mid \boldsymbol{\theta}_j)\, p(\boldsymbol{\theta}_j \mid \boldsymbol{\xi})\, d\boldsymbol{\theta}_j
+    \]
+    Effectively, we are fitting $\boldsymbol{\xi}$ by computing how likely $\mathcal{D}$ is for a given $\boldsymbol{\xi}$ averaging over every $\boldsymbol{\theta}$, without estimating $\boldsymbol{\theta}$ explicitly.
+    Once $\hat{\boldsymbol{\xi}}$ is known, the prior on $\boldsymbol{\theta}$ can be computed, then the conditional posterior is computable $p( \boldsymbol{\theta} | \hat{\boldsymbol{\xi}}, \mathcal{D}) \propto p(\mathcal{D} | \boldsymbol{\theta})p(\boldsymbol{\theta}|\hat{\boldsymbol{\xi}})$.
+\end{enumerate}
+
+\subsection{Frequentist Statistics}
+In frequentist statistics, uncertainty is not represented by the posterior distribution of a random variable, but instead by the sampling distribution of an estimator.
+
+An \textbf{estimator} is a decision procedure that specifies what action to take given some observed data. 
+In the context of parameter estimation, where the action space is to return a parameter vector,
+\[
+\hat{\boldsymbol{\theta}} = \hat{\Theta}(\mathcal{D})
+\]
+where $\hat{\boldsymbol{\theta}}$ can be MLE, MAP etc.
+
+The \textbf{sampling distribution} of an estimator is the distribution of results we would see if we applied the estimator multiple times to different datasets sampled from some distribution.
+In the context of parameter estimation, it is the distribution of $\hat{\boldsymbol{\theta}}$, viewed as a random variable that depends on the random sample $\mathcal{D}$.
+
+Imagine sampling $S$ different datasets, each of size $N$, from some true model $p(\boldsymbol{x} | \boldsymbol{\theta}^*)$ to generate
+\[
+\tilde{\mathcal{D}}^{(s)} = \{\boldsymbol{x}_n \sim p(\boldsymbol{x}_n \mid \boldsymbol{\theta}^*) : n = 1:N\} \sim \boldsymbol{\theta}^*
+\]
+Now apply the estimator to each $\tilde{\mathcal{D}}^{(s)}$ to get a set of estimates, $\{\hat{\Theta}(\tilde{\mathcal{D}}^{(s)})\}_{s=1}^{S}$. As we let $S \to \infty$, the distribution induced by this set is the sampling distribution of the estimator, i.e.
+\[
+p(\hat{\Theta}(\tilde{\mathcal{D}}) = \boldsymbol{\theta} \mid \tilde{\mathcal{D}} \sim \boldsymbol{\theta}^*) \approx \frac{1}{S} \sum_{s=1}^{S} \delta(\boldsymbol{\theta} - \hat{\Theta}(\tilde{\mathcal{D}}^{(s)}))
+\]
+Since $\boldsymbol{\theta}^*$ is unknown, $\tilde{\mathcal{D}}^{(s)}$ cannot be generated using $\boldsymbol{\theta}^*$, so this is usually approximated by a Monte Carlo technique called \textbf{bootstrap}.
+\begin{itemize}
+    \item Parametric bootstrap. Generate $\tilde{\mathcal{D}}^{(s)}$ using $\hat{\boldsymbol{\theta}} = \hat{\Theta}(\mathcal{D})$, i.e. $\tilde{\mathcal{D}}^{(s)} = \{\boldsymbol{x}_n \sim p(\boldsymbol{x}_n \mid \hat{\boldsymbol{\theta}}) : n = 1:N\}$.
+    Then apply the estimator $\Theta$ to each $\tilde{\mathcal{D}}^{(s)}$, yielding the approximated sampling distribution.
+    \item Non-parametric bootstrap. Assuming no parametric generative model $p(\boldsymbol{x} | \boldsymbol{\theta})$ for the data. Then, sampling $N$ data points from the original dataset $\mathcal{D}$ with replacement, i.e. for $s = 1, \cdots, S$, form $\tilde{\mathcal{D}}^{(s)} = \{\boldsymbol{x}_j \}_{j=1}^N$ where each $\boldsymbol{x}_j$ is drawn uniformly from the original size $N$ dataset $\mathcal{D}$.
+    Then apply the estimator $\Theta$ to each $\tilde{\mathcal{D}}^{(s)}$, yielding the approximated sampling distribution.
+\end{itemize}
+
+Although bootstrap approximation is generally applicable, when the estimator is MLE and the sample size is large, there is a behaviour called asymptotic normality.
+\begin{theorem}[\textbf{Asymptotic normality of the sampling distribution of the MLE}]
+With the MLE estimator, when the sample size becomes large, the sampling distribution of the MLE for certain models becomes Gaussian.
+\[
+\sqrt{N}(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}^*) \to \mathcal{N}(\boldsymbol{0}, \mathbf{F}(\boldsymbol{\theta}^*)^{-1})
+\]
+where $\mathbf{F}(\boldsymbol{\theta}^*)$ is the Fisher information matrix, $\boldsymbol{\theta}^*$ are the parameters of the data generating process to which the estimator will be applied.
+$\to$ means convergence in distribution.
+\end{theorem}
+Therefore, as the sample size goes to infinity, the sampling distribution of the MLE will converge to a Gaussian centered on the true parameter, 
+with a precision equal to the Fisher information.
+
+\subsubsection*{Fisher information matrix}
+The \textbf{score function} is defined to be the gradient of the log likelihood wrt the parameter vector:
+\[
+\boldsymbol{s}(\boldsymbol{\theta}) \triangleq \nabla_{\boldsymbol{\theta}} \log p(\boldsymbol{x} \mid \boldsymbol{\theta})
+\]
+Consider a scalar $\theta$, $\int p(x | \theta) dx = 1$ gives $\frac{\partial}{\partial \theta} \int p(x | \theta) dx = 0$. Thus, it can be shown that the expectation of the score function is zero.
+\[
+\begin{aligned}
+\mathbb{E}\left[ s(\theta) \right] &= \int \Big[\frac{\partial}{\partial \theta} \log p(x|\theta)  \Big] p(x|\theta) dx = \int \frac{\partial}{\partial \theta} p(x|\theta) dx = 0 \\
+&\Rightarrow \mathbb{E}_{p(\boldsymbol{x} | \boldsymbol{\theta})}\left[ \nabla_{\boldsymbol{\theta}} \log p(\boldsymbol{x} \mid \boldsymbol{\theta}) \right] = \boldsymbol{0}
+\end{aligned}
+\]
+The \textbf{Fisher information matrix (FIM)} is defined to be the covariance of the score function:
+\[
+\mathbf{F}(\boldsymbol{\theta}) \triangleq \mathbb{E}_{\boldsymbol{x} \sim p(\boldsymbol{x} \mid \boldsymbol{\theta})} \left[ \nabla_{\boldsymbol{\theta}} \log p(\boldsymbol{x} \mid \boldsymbol{\theta}) \nabla_{\boldsymbol{\theta}} \log p(\boldsymbol{x} \mid \boldsymbol{\theta})^{\mathsf{T}} \right]
+\]
+so the $(i,j)$'th entry has the form
+\[
+\begin{aligned}
+\mathbf{F}(\boldsymbol{\theta})_{ij} &= \mathbb{E}_{\boldsymbol{x} \sim p(\boldsymbol{x} \mid \boldsymbol{\theta})} \left[ \left( \frac{\partial}{\partial \theta_i} \log p(\boldsymbol{x} \mid \boldsymbol{\theta}) \right) \left( \frac{\partial}{\partial \theta_j} \log p(\boldsymbol{x} \mid \boldsymbol{\theta}) \right) \right] \\
+&= -\mathbb{E}_{\boldsymbol{x} \sim p(\boldsymbol{x} \mid \boldsymbol{\theta})} \left[ \frac{\partial^2}{\partial \theta_i \theta_j} \log p(\boldsymbol{x} \mid \boldsymbol{\theta})\right] 
+\end{aligned}
+\]
+where the second line states that the Fisher information matrix equals the expected Hessian of the negative log likelihood (NLL), but this requires $\log p(\boldsymbol{x} | \boldsymbol{\theta})$ to be twice differentiable.
+The Hessian measures the curvature of the likelihood, the FIM tells how well the likelihood function can identify the best set of parameters (if a likelihood function is flat $F \approx 0$, we cannot infer anything about the parameters).
+
+
+
 \clearpage
 \section{Matrix Calculus}
 \subsection{Functions that map scalars to scalars}
