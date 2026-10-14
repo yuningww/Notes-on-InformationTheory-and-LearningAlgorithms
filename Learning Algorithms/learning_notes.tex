@@ -552,7 +552,102 @@ Here are some useful identities:
 \]
 
 \clearpage
-\section{Bound Optimization}
+\section{Optimization}
+An optimization problem means we are trying to find the values for a set of variables $\boldsymbol{\theta} \in \Theta$, that minimize a scalar-valued function $\mathcal{L}: \Theta \to \mathbb{R}$:
+\[
+\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta} \in \Theta} \mathcal{L}(\boldsymbol{\theta}) = \arg\max_{\boldsymbol{\theta} \in \Theta} -\mathcal{L}(\boldsymbol{\theta})
+\]
+where the parameter space is given by $\Theta \subseteq \mathbb{R}^D$ and $D$ is the number of variables being optimized over.
+
+\subsection{Constrained optimization}
+A constrained optimization problem means
+\[
+\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta} \in \mathcal{C}} \mathcal{L}(\boldsymbol{\theta})
+\]
+where the constraint set is
+\[
+\mathcal{C} = \{\boldsymbol{\theta} \in \mathbb{R}^D : h_i(\boldsymbol{\theta}) = 0,\, i \in \mathcal{E},\, g_j(\boldsymbol{\theta}) \leq 0,\, j \in \mathcal{I}\}
+\]
+where $\mathcal{E}$ is the set of \textbf{equality constraints}, and $\mathcal{I}$ is the set of \textbf{inequality constraints}.
+\subsubsection{Lagrange multipliers: equality constraints}
+If the constraint set only contains equality constraints, the method of Lagrange multipliers can be used.
+
+Consider a single equality constaint $h_i(\boldsymbol{\theta}) = 0$, $\nabla h(\boldsymbol{\theta})$ will be orthogonal to the constraint surface since the Taylor expansion
+\[
+h(\boldsymbol{\theta} + \boldsymbol{\epsilon}) \approx h(\boldsymbol{\theta}) + \boldsymbol{\epsilon}^\top \nabla h(\boldsymbol{\theta})
+\]
+where both $\boldsymbol{\theta}$ and $\boldsymbol{\theta} + \boldsymbol{\epsilon}$ are close on the constraint surface, then $h(\boldsymbol{\theta}) = h(\boldsymbol{\theta} + \boldsymbol{\epsilon})$ and hence $\boldsymbol{\epsilon}^{\mathsf{T}} \nabla h(\boldsymbol{\theta}) \approx 0$. Since $\boldsymbol{\epsilon}$ is parallel to the constraint surface, $\nabla h(\boldsymbol{\theta})$ must be perpendicular to it.
+
+For a point $\boldsymbol{\theta}^*$ on the constraint surface such that $\mathcal{L}(\boldsymbol{\theta})$ is minimized, $\nabla h(\boldsymbol{\theta}^*)$ is orthogonal to the constraint surface. 
+Also, $\nabla \mathcal{L}(\boldsymbol{\theta}^*)$ is orthogonal to the constraint surface, by the definition of a min/max point. 
+Therefore,
+\[
+\nabla \mathcal{L}(\boldsymbol{\theta}^*) = \lambda^* \nabla h(\boldsymbol{\theta}^*) \quad \text{for} \, \, \lambda^* \in \mathbb{R}
+\]
+which can be converted into an objective, called the \textbf{Lagrangian},
+\[
+L(\boldsymbol{\theta}, \lambda) \triangleq \mathcal{L}(\boldsymbol{\theta}) + \lambda h(\boldsymbol{\theta})
+\]
+At a stationary point of the Lagrangian,
+\[
+\nabla_{\boldsymbol{\theta}, \lambda} L(\boldsymbol{\theta}, \lambda) = \mathbf{0} \iff \lambda \nabla_{\boldsymbol{\theta}} h(\boldsymbol{\theta}) = - \nabla \mathcal{L}(\boldsymbol{\theta}),\ h(\boldsymbol{\theta}) = 0
+\]
+Combining all the constraints, the Lagrangian becomes:
+\[
+L(\boldsymbol{\theta}, \boldsymbol{\lambda}) = \mathcal{L}(\boldsymbol{\theta}) + \sum_{j=1}^{m} \lambda_j h_j(\boldsymbol{\theta})
+\]
+where $\lambda$ is the Lagrangian multiplier.
+
+\subsubsection{The KKT conditions}
+Generalizing the concept of Lagrange multipliers to additionally handle inequality constraints.
+
+\subsubsection*{Introduction}
+Consider a single inequality constaint $g_j(\boldsymbol{\theta}) \leq 0$, to find the optimum, one approach is to construct an objective which penalizes $g_j(\boldsymbol{\theta}) > 0$ by going to infinity.
+Adding an extra term to the original objective $\mu g(\boldsymbol{\theta})$ where $\mu \geq 0$, then taking the maximum of this Lagrangian
+\[
+\max_{\mu \geq 0} L(\boldsymbol{\theta}, \mu) = \max_{\mu \geq 0} \mathcal{L}(\boldsymbol{\theta}) + \mu g(\boldsymbol{\theta})
+\begin{cases}
+\infty & \text{if } g(\boldsymbol{\theta}) > 0, \\
+\mathcal{L}(\boldsymbol{\theta}) & \text{otherwise}
+\end{cases}
+\]
+Thus, the optimization problem becomes
+\[
+\boldsymbol{\theta}^* = \arg \min_{\boldsymbol{\theta}} \biggl\{\max_{\mu \geq 0} L(\boldsymbol{\theta}, \mu) \biggr\} 
+\]
+
+\subsubsection*{Generalized Lagrangian}
+Consider the general case with multiple constraints, $\mathcal{C} = \{\boldsymbol{\theta} \in \mathbb{R}^D : h_i(\boldsymbol{\theta}) = 0,\, i \in \mathcal{E},\, g_j(\boldsymbol{\theta}) \leq 0,\, j \in \mathcal{I}\}$,
+the generalized Lagrangian is,
+\[
+L(\boldsymbol{\theta}, \boldsymbol{\mu} = \{ \mu_j \}_{j \in \mathcal{I}}, \boldsymbol{\lambda} = \{ \lambda_i \}_{i \in \mathcal{E}}) = \mathcal{L}(\boldsymbol{\theta}) + \sum_j \mu_j g_j(\boldsymbol{\theta}) + \sum_i \lambda_i h_i(\boldsymbol{\theta})
+\]
+where the optimization problem is
+\[
+\boldsymbol{\theta}^* = \arg \min_{\boldsymbol{\theta}} \biggl\{ \max_{\boldsymbol{\mu} \geq 0, \boldsymbol{\lambda}} L(\boldsymbol{\theta}, \boldsymbol{\mu}, \boldsymbol{\lambda}) \biggr\} 
+\]
+Note that $\max_{\boldsymbol{\mu} \geq 0, \boldsymbol{\lambda}}$ penalizes every $g_j(\boldsymbol{\theta}) > 0$ and $h_i(\boldsymbol{\theta}) \neq 0$ by setting $L$ to infinity.
+
+\subsubsection*{Karush-Kuhn-Tucker (KKT) conditions}
+In the generalized Lagrangian, the KKT conditions are
+\begin{itemize}
+    \item All constraints are satisfied
+    \[
+    g_j(\boldsymbol{\theta}) \leq 0, \, h_i(\boldsymbol{\theta}) = 0 \quad \text{for} \, \, \forall i, j
+    \]
+    \item The solution is a stationary point:
+    \[
+    \nabla \mathcal{L}(\boldsymbol{\theta}^*) + \sum_j \mu_j \nabla g_j(\boldsymbol{\theta}^*) + \sum_i \lambda_i \nabla h_i(\boldsymbol{\theta}^*) = \mathbf{0}
+    \]
+    \item The penalty for the inequality constraint points in the right direction $\boldsymbol{\mu} \geq \boldsymbol{0}$.
+    \item The Lagrange multipliers pick up any slack in the inactive constraints, i.e., either $\mu_j = 0$ or $g_j(\boldsymbol{\theta}^*) = 0$, so $\boldsymbol{\mu} \odot \boldsymbol{g} = \boldsymbol{0}$.
+    This is due to the fact that, for a single inequality constraint $g_j(\boldsymbol{\theta}^*) \leq 0$: when $g_j(\boldsymbol{\theta}^*) = 0$ (active), this turns out to be an equality constraint, thus $\nabla \mathcal{L} = -\mu \nabla g_j$; when $g_j(\boldsymbol{\theta}^*) < 0$, we have $\nabla \mathcal{L} = -\mu \nabla g_j$ and $\nabla \mathcal{L} = 0$, thus $\mu = 0$.
+\end{itemize}
+If $\mathcal{L}$ and $g_{j \in \mathcal{I}}$ are convex and $h_{i \in \mathcal{E}}$ are affine, KKT conditions are sufficient for global optimality.
+
+
+
+\subsection{Bound optimization}
 If the optimization goal is to maximize a function $\ell (\boldsymbol{\theta})$ wrt its parameters $\boldsymbol{\theta}$. 
 The idea of bound optimization is to construct a surrogate function $Q(\boldsymbol{\theta}; \boldsymbol{\theta}^{t})$ which is a tight lowerbound to $\ell (\boldsymbol{\theta})$ such that:
 \[
@@ -575,7 +670,26 @@ curve), and fit a new bound at that point (dotted green curve). The maximum of t
 becomes $\boldsymbol{\theta}^{t+2}$, etc}
 \end{figure}
 
-\subsection{EM algorithm}
+\subsubsection{$Q$ for concave functions}
+If $\ell(\boldsymbol{\theta})$ is a concave function we want to maximize, then one way to obtain a surrogate function is through its Hessian.
+Consider the second-order Taylor expansion of $\ell(\boldsymbol{\theta})$,
+\[
+\begin{aligned}
+    \ell(\boldsymbol{\theta}) &\approx \ell(\boldsymbol{\theta}^t) + (\boldsymbol{\theta} - \boldsymbol{\theta}^t)^{\mathsf{T}} \nabla \ell(\boldsymbol{\theta}^t) + \frac{1}{2} (\boldsymbol{\theta} - \boldsymbol{\theta}^t)^{\mathsf{T}} \mathbf{H} (\boldsymbol{\theta} - \boldsymbol{\theta}^t) \\
+    &\geq \ell(\boldsymbol{\theta}^t) + (\boldsymbol{\theta} - \boldsymbol{\theta}^t)^{\mathsf{T}} \nabla \ell(\boldsymbol{\theta}^t) + \frac{1}{2} (\boldsymbol{\theta} - \boldsymbol{\theta}^t)^{\mathsf{T}} \mathbf{B} (\boldsymbol{\theta} - \boldsymbol{\theta}^t) 
+\end{aligned}
+\]
+where $\mathbf{H}(\boldsymbol{\theta})$ is negative definite due to concavity, and $\mathbf{B}$ is a negative definite matrix such that $\mathbf{0} \succ \mathbf{H}(\boldsymbol{\theta}) \succ \mathbf{B}$.
+Then, expanding the brackets and dropping terms constant in $\boldsymbol{\theta}$,
+\[
+Q(\boldsymbol{\theta}, \boldsymbol{\theta}^t) = \boldsymbol{\theta}^{\mathsf{T}} (\nabla \ell(\boldsymbol{\theta}^t) - \mathbf{B} \boldsymbol{\theta}^t) + \frac{1}{2} \boldsymbol{\theta}^{\mathsf{T}} \mathbf{B} \boldsymbol{\theta}
+\]
+Solving $\nabla_{\boldsymbol{\theta}}Q(\boldsymbol{\theta}, \boldsymbol{\theta}^t) = \boldsymbol{0}$ gives a closed-form update,
+\[
+\boldsymbol{\theta}^{t+1} = \boldsymbol{\theta}^t - \mathbf{B}^{-1} \nabla \ell(\boldsymbol{\theta}^t)
+\]
+
+\subsubsection{EM algorithm}
 \textbf{Expectation maximization (EM)} algorithm is a special case of bound optimization 
 designed to compute the MLE or MAP parameter estimates for probability models that have \textbf{missing data} and/or \textbf{hidden variables}.
 
@@ -1777,8 +1891,6 @@ There are several ways to generate $\hat{\boldsymbol{y}}_t$,
     Optionally with temperature $\tau$ (using $\mathrm{softmax}(\boldsymbol{o}_t/\tau)$) or truncated to the top-$k$ or top-$p$ tokens first.
     \item Beam search. Keep the top $K$ partial sequences (beam width $K$), scored by their cumulative log-probability. At each step, expand each of them with all $V$ possible next tokens ($V$ is the vocabulary size) to get $VK$ candidates, and keep the top $K$ again. Each candidate carries its own hidden state. Greedy decoding is the special case $K=1$.
 \end{itemize}
-
-
 
 
 \clearpage
